@@ -1,0 +1,304 @@
+@import '@/styles/mixins.scss';
+body.dark-theme .custom-table td{
+  background: rgba(33,33,33);
+}
+body.dark-theme .custom-rate__total{
+  background: rgba(66,66,66);
+}
+.custom {
+  &-table {
+    .v-table > .v-table__wrapper > table {
+      border-spacing: 0 0.5rem !important;
+    }
+    .v-data-table-footer {
+      display: none !important;
+    }
+    &__body {
+      td {
+        max-width: 100px !important;
+        width: auto !important;
+        background: #fafafa;
+        border-bottom: none !important;
+        padding-bottom: 10px !important;
+        padding-top: 10px !important;
+      }
+      td:nth-child(3) {
+        max-width: 80px;
+      }
+    }
+    &__qnty {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #dbdbdb;
+      border-radius: 13px;
+      .v-field__input {
+        padding-top: 5px !important;
+        padding-left: 35px !important;
+      }
+      button {
+        background: #f0f0f0;
+        border-radius: 12px;
+        padding: 8px 20px;
+        font-weight: 600;
+        color: #707070;
+        border: 1px solid #dbdbdb;
+        transition: 0.5s;
+
+        &:hover {
+          background: #00cec9;
+          color: #ffffff;
+          border: 1px solid transparent;
+        }
+      }
+      &-input {
+        border: none;
+        outline: none;
+        text-align: center;
+        padding: 8px 5px 9px 15px;
+        font-weight: 400;
+        max-width: 70px;
+      }
+    }
+    &__btn {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 10px 16px;
+      color: #c6c6cb;
+      border: 2px solid #dbdbdb;
+    }
+  }
+  &-rate {
+    &__select {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 20px 0;
+      @include _575-block {
+        grid-template-columns: 1fr;
+      }
+      .v-field--variant-solo-filled .v-field__overlay {
+        background: #ffffff;
+      }
+    }
+    &__total {
+      background: #fafafa;
+      border-radius: 9px;
+      padding: 10px 30px;
+      width: 50%;
+      height: 100%;
+
+      @include _575-block {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .v-card-text:last-child {
+        font-size: 22px;
+        @include _575-block {
+          font-size: 18px;
+        }
+      }
+      .v-card-text:first-child {
+        font-size: 18px;
+        @include _575-block {
+          font-size: 16px;
+        }
+      }
+
+      .v-card-text {
+        font-weight: 400;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.2rem !important;
+        font-size: 18px;
+      }
+    }
+  }
+}
+.cash-pay-btn {
+  @include _575-block {
+    width: 100%;
+    text-align: right;
+    button {
+      font-size: 14px;
+    }
+  }
+}
+.custom-collapse {
+  &__header {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    @include _767-block {
+      flex-direction: column;
+      gap: 10px;
+    }
+    & > div {
+      flex: 1;
+    }
+    h2 {
+      color: #93a2b5;
+      font-size: 11px;
+      letter-spacing: -0.09px;
+      font-weight: 400;
+    }
+    p {
+      font-size: 14px;
+    }
+  }
+
+  .v-expansion-panel-text__wrapper {
+    padding: 0;
+  }
+
+  .v-expansion-panel > .v-expansion-panel-title:not(.v-expansion-panel-title--static) {
+    box-shadow:
+      rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
+      rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+  }
+}
+
+.collapsed-table {
+  overflow-x: auto;
+  width: 100%;
+  background-color: white;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    thead tr th {
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      text-align: center;
+      font-size: 13px;
+      white-space: nowrap;
+      padding: 10px 15px;
+    }
+    tbody tr td {
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      text-align: center;
+      font-size: 14px;
+      padding: 10px 15px;
+    }
+  }
+}
+.cash-custom {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  @include _767-block {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @include _575-block {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  gap: 24px;
+  &__button {
+    padding: 15px 20px;
+    border-radius: 12px;
+    border: 2px solid #7e57c2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #000;
+
+    font-size: 20px;
+    font-weight: 600;
+    @include _575-block {
+      font-size: 18px;
+    }
+    &.active {
+      background-color: #7e57c2; /* Измените цвет фона на желаемый */
+      color: #ffffff; /* Измените цвет текста на желаемый */
+      transition: all 0.2s ease-in-out;
+    }
+  }
+}
+
+body.dark-theme .cash-custom__button{
+  color: #ffffff;
+}
+body.dark-theme .custom-table {
+  tbody {
+    tr {
+      border-bottom-color: #333333;
+    }
+  }
+  &__qnty {
+    border-color: #333333;
+    button {
+      background: #333333;
+      border-color: #333333;
+      color: #ffffff;
+    }
+  }
+
+  &__btn {
+    background-color: #333333;
+    border-color: #333333;
+    color: #ffffff;
+  }
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 5px 0;
+}
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  thead tr th {
+    text-align: left;
+    padding: 5px 20px;
+    font-size: 13px;
+    color: #7e57c2;
+    font-weight: 400;
+  }
+  tbody tr td {
+    padding: 25px 20px;
+    font-weight: 700;
+  }
+  tbody tr {
+    background-color: #fafafa;
+    border-bottom: 10px solid #fff;
+  }
+}
+
+.active-btn {
+  color: #fff; /* Цвет текста активной кнопки */
+  background-color: #7e57c2; /* Фон активной кнопки */
+  border-color: #5e35b1; /* Цвет бордюра активной кнопки */
+  transition: all 0.2s ease-in-out;
+}
+
+@media (max-width: 887px) {
+  .custom {
+    &-table {
+      overflow-x: scroll;
+      .v-table > .v-table__wrapper > table {
+        width: 1000px !important;
+      }
+      &__td {
+        font-size: 12px;
+      }
+      &__body {
+        td {
+          padding-bottom: 5px !important;
+          padding-top: 5px !important;
+        }
+      }
+    }
+    &-scroll {
+      &__btns {
+        overflow-x: scroll;
+        gap: 20px;
+        padding-bottom: 20px !important;
+      }
+    }
+  }
+}
+.no-wrap {
+  white-space: nowrap !important;
+}

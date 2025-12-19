@@ -1,0 +1,50 @@
+.login-page {
+  height: 100dvh;
+  display: grid;
+  place-content: center;
+  position: relative;
+  &__form {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 45px;
+  }
+  &__logo {
+    width: 40px;
+    z-index: 20;
+    display: block;
+    margin: 0 auto;
+  }
+  &__img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    display: block;
+  }
+  .form--card {
+    z-index: 20;
+    padding: 16px;
+    box-shadow: none;
+    overflow: visible;
+    border-radius: 12px;
+    box-shadow: 0 6px 10px rgba(212, 194, 240, 0.2);
+    &__block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 24px 0 16px;
+    }
+  }
+  .form-top {
+    box-shadow: 0 8px 8px rgba(0, 206, 201, 0.2);
+    border-radius: 6px;
+    background-image: linear-gradient(to left, #0dcec9 0, #7e54c2 100%);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    margin: -40px 0 0;
+  }
+}

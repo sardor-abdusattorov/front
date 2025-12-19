@@ -1,0 +1,15 @@
+/* Tooltip container */
+.tooltip {
+  position: absolute;
+  background-color: rgba($color: #fff, $alpha: 0.9);
+  color: #333;
+  text-align: center;
+  padding: 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 12px;
+  display: none; /* Initially hidden */
+  z-index: 1000;
+  pointer-events: none; /* Prevent mouse interaction */
+  min-width: 150px;
+}

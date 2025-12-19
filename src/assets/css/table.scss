@@ -1,0 +1,138 @@
+.table-responsive {
+  overflow-x: auto;
+}
+body.dark-theme thead tr{
+  background: rgba(33, 33, 33) !important;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme tbody tr {
+  background: rgba(33, 33, 33);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+}
+
+.reports_by_tariffs {
+  tr td {
+    padding: 12px !important;
+    &:not(:last-child) {
+      border-right: 1px solid #eee;
+    }
+  }
+  .top-table {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border-bottom: 1px solid #eee;
+
+    // min-width: 800px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+    tr th {
+      text-align: center;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+    .vs-table-text {
+      display: flex;
+      justify-content: center !important;
+      text-align: center;
+      width: 100%;
+    }
+
+    tr td {
+      text-align: center;
+      &.double {
+        padding: 0 !important;
+        position: relative;
+      }
+      .divided {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        white-space: nowrap;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+
+        &.triple-divided {
+          grid-template-columns: repeat(3, 1fr) !important;
+          span {
+            border-left: 1px solid #eee;
+          }
+        }
+        span {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 12px;
+          &:first-child {
+            border-right: 1px solid #eee;
+          }
+        }
+      }
+    }
+  }
+
+  .vs-con-table .vs-con-tbody {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  .th {
+    padding: 0 !important;
+    .vs-table-text {
+      padding: 12px;
+    }
+    .th-inline {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #eee;
+    }
+
+    .th-inline--block {
+      width: 50%;
+      padding: 12px;
+      text-align: center;
+      &:first-child {
+        border-right: 1px solid #eee;
+      }
+    }
+  }
+
+  .card-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+  }
+}
+
+.form-control[readonly] {
+  background: transparent !important;
+  cursor: pointer !important;
+}
+.table-wrapper th:not(:last-child) {
+  border-right: 1px solid #eee;
+  overflow-x: auto;
+}
+.vs-table--tbody-table tr {
+  transition: all 0.3s ease;
+  background: #fff;
+
+  border-bottom: 1px solid #eee;
+}
+
+.vs-con-table .vs-con-tbody .vs-table--tbody-table .vs-table--thead th {
+  padding: 15px;
+}
+.vs-table--thead {
+  th {
+    border-right: 1px solid #eee;
+  }
+}

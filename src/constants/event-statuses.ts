@@ -1,0 +1,7 @@
+export const EVENT_STATUSES = {
+  SENT: 2,
+  CONFIRMED: 3,
+  REJECTED: 4,
+  CANCEL_REQUEST: 5,
+  CANCELLED: 6
+}

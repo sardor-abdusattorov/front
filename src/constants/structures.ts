@@ -1,0 +1,11 @@
+export const STRUCTURES = {
+  FOND: 1,
+  EMITENT: 2,
+  ORGANIZER: 3,
+  AGENT: 4,
+  MUZEY: 5,
+  TEATR: 6,
+  SUPER_USER: 7,
+  SUPERVISOR: 8,
+  TOUR_AGENT: 9
+}

@@ -1,0 +1,17 @@
+stages:
+  - build-deploy
+
+build:
+  stage: build-deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t front .
+    - docker rm -f boyet-frontend
+    - docker run -e TZ=Asia/Tashkent --name boyet-frontend --restart=always -d -p 4000:3000 front
+    - docker image prune -a --force
+  tags:
+    - services
+  only:
+    - master
