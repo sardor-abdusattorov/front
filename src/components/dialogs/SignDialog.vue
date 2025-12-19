@@ -304,21 +304,19 @@ const signContractWithToken = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    // Проверяем - если пользователь отменил операцию, не показываем ошибку
-    const errorReason = String(e?.reason || '')
-    const errorMessage = e?.message || getErrorMessage(e)
-
-    const isCancelled =
-      e?.status === -5000 || // Статус -5000 = отмена в E-IMZO
-      errorReason.toLowerCase().includes('отмен') ||
-      errorReason.toLowerCase().includes('cancel') ||
-      (errorMessage && errorMessage.toLowerCase().includes('cancel')) ||
-      (errorMessage && errorMessage.toLowerCase().includes('отмен'))
-
-    if (!isCancelled) {
-      // Показываем ошибку только если это настоящая ошибка, а не отмена
-      signError.value = errorMessage
+    // Статус -5000 = отмена, не показываем ошибку
+    if (e?.status === -5000) {
+      return
     }
+
+    // Статус -9999 = неправильный пароль
+    if (e?.status === -9999) {
+      signError.value = 'Введен неправильный пароль. Попробуйте еще раз.'
+      return
+    }
+
+    // Остальные ошибки
+    signError.value = e?.message || getErrorMessage(e)
   }
 }
 
@@ -363,30 +361,19 @@ const signContract = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    // Проверяем - если пользователь отменил операцию, не показываем ошибку
-    const errorReason = String(e?.reason || '')
-    let errorMessage = e?.message || getErrorMessage(e)
-
-    const isCancelled =
-      e?.status === -5000 || // Статус -5000 = отмена в E-IMZO
-      errorReason.toLowerCase().includes('отмен') ||
-      errorReason.toLowerCase().includes('cancel') ||
-      (errorMessage && errorMessage.toLowerCase().includes('cancel')) ||
-      (errorMessage && errorMessage.toLowerCase().includes('отмен'))
-
-    if (isCancelled) {
-      // Пользователь просто отменил операцию - не показываем ошибку
+    // Статус -5000 = отмена, не показываем ошибку
+    if (e?.status === -5000) {
       return
     }
 
-    // Специальная обработка для частых ошибок
-    if (errorMessage.includes('password') || errorMessage.includes('пароль')) {
-      errorMessage = 'Введен неправильный пароль для файла ключа. Попробуйте еще раз.'
-    } else if (errorMessage.includes('IOException') || errorMessage.includes('поврежден')) {
-      errorMessage = 'PFX-файл поврежден или введен неправильный пароль.'
+    // Статус -9999 = неправильный пароль
+    if (e?.status === -9999) {
+      signError.value = 'Введен неправильный пароль. Попробуйте еще раз.'
+      return
     }
 
-    signError.value = errorMessage
+    // Остальные ошибки
+    signError.value = e?.message || getErrorMessage(e)
   }
 }
 
