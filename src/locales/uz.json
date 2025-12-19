@@ -807,5 +807,15 @@
   "publicOfferTemplate": "Ommaviy oferta",
   "ficsalId": "Fiksal id",
   "fiscalId": "Fiskal id",
-  "date_error": "Tugash sanasi boshlash sanasidan katta bo'lmasligi kerak"
+  "date_error": "Tugash sanasi boshlash sanasidan katta bo'lmasligi kerak",
+  "sign_with_token": "USB token orqali imzolash",
+  "sign_with_file": "Kalit fayli orqali imzolash",
+  "select_usb_device": "USB qurilmasini tanlang",
+  "no_usb_devices": "USB qurilmalari topilmadi",
+  "loading_keys": "USB tokendan kalitlar yuklanmoqda...",
+  "error_loading_keys": "Kalitlarni yuklashda xato",
+  "old_eimzo_version": "Sizda E-IMZO ning eski versiyasi o'rnatilgan",
+  "old_eimzo_version_desc": "Barqaror ishlash uchun E-IMZO ni 5 yoki undan yuqori versiyaga yangilash tavsiya etiladi",
+  "download_eimzo": "Yangi versiyani yuklab olish",
+  "continue_anyway": "Joriy versiya bilan davom etish"
 }

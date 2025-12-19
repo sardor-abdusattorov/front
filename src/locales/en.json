@@ -807,5 +807,15 @@
   "privacyPolicyTemplate": "Privacy policy",
   "publicOfferTemplate": "Public offer",
   "fiscalId": "Fiscal id",
-  "date_error": "The end date must not be greater than the start date"
+  "date_error": "The end date must not be greater than the start date",
+  "sign_with_token": "Sign with USB token",
+  "sign_with_file": "Sign with key file",
+  "select_usb_device": "Select USB device",
+  "no_usb_devices": "No USB devices detected",
+  "loading_keys": "Loading keys from USB token...",
+  "error_loading_keys": "Error loading keys",
+  "old_eimzo_version": "You have an old version of E-IMZO installed",
+  "old_eimzo_version_desc": "It is recommended to update E-IMZO to version 5 or higher for stable operation",
+  "download_eimzo": "Download new version",
+  "continue_anyway": "Continue with current version"
 }

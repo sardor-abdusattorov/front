@@ -778,5 +778,15 @@
   "privacyPolicyTemplate": "Qáwipsizlik siyasatı",
   "publicOfferTemplate": "Ommaviy oferta",
   "fiscalId": "Fiskal id",
-  "date_error": "Tamamlanıw sánesi baslaw sánesinen úlken bolmawi kerek"
+  "date_error": "Tamamlanıw sánesi baslaw sánesinen úlken bolmawi kerek",
+  "sign_with_token": "USB token arqalı qol qoyıw",
+  "sign_with_file": "Gilt fayl arqalı qol qoyıw",
+  "select_usb_device": "USB qurilmasın tańlań",
+  "no_usb_devices": "USB qurilmaları tabılmadı",
+  "loading_keys": "USB tokenden giltler júklenbekte...",
+  "error_loading_keys": "Giltlerdi júklew xatası",
+  "old_eimzo_version": "Sizde E-IMZO nıń eski versiyası ornatılǵan",
+  "old_eimzo_version_desc": "Turaqtı jumıs ushın E-IMZO nı 5 yamasa onnan joqarı versiyaǵa jańalaw kerek",
+  "download_eimzo": "Jańa versiyasın júklep alıw",
+  "continue_anyway": "Házirgi versiya menen dawam etiw"
 }
