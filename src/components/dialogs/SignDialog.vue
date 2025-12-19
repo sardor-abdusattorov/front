@@ -304,16 +304,16 @@ const signContractWithToken = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    const errorMessage = e?.message || getErrorMessage(e)
-    const errorReason = e?.reason || ''
-
     // Проверяем - если пользователь отменил операцию, не показываем ошибку
+    const errorReason = String(e?.reason || '')
+    const errorMessage = e?.message || getErrorMessage(e)
+
     const isCancelled =
-      errorMessage.toLowerCase().includes('cancel') ||
-      errorMessage.toLowerCase().includes('отмен') ||
+      e?.status === -5000 || // Статус -5000 = отмена в E-IMZO
       errorReason.toLowerCase().includes('отмен') ||
       errorReason.toLowerCase().includes('cancel') ||
-      (e?.status && e.status === -5000) // Статус -5000 = отмена в E-IMZO
+      (errorMessage && errorMessage.toLowerCase().includes('cancel')) ||
+      (errorMessage && errorMessage.toLowerCase().includes('отмен'))
 
     if (!isCancelled) {
       // Показываем ошибку только если это настоящая ошибка, а не отмена
@@ -331,10 +331,16 @@ const signContract = async () => {
 
   try {
     const myHash = await getHashESign(correctEKey.value, signData.value.signToHash)
+
+    // Если вернулся null - пользователь отменил операцию, просто выходим
+    if (!myHash) {
+      return
+    }
+
     const pairs = correctEKey.value.alias.split(',')
     const result: any = {}
 
-    if (!myHash?.hash) {
+    if (!myHash.hash) {
       signError.value = 'Не удалось создать подпись. Попробуйте еще раз.'
       return
     }
@@ -357,17 +363,16 @@ const signContract = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    // Парсим ошибку для более понятного сообщения
-    let errorMessage = e?.message || getErrorMessage(e)
-    const errorReason = e?.reason || ''
-
     // Проверяем - если пользователь отменил операцию, не показываем ошибку
+    const errorReason = String(e?.reason || '')
+    let errorMessage = e?.message || getErrorMessage(e)
+
     const isCancelled =
-      errorMessage.toLowerCase().includes('cancel') ||
-      errorMessage.toLowerCase().includes('отмен') ||
+      e?.status === -5000 || // Статус -5000 = отмена в E-IMZO
       errorReason.toLowerCase().includes('отмен') ||
       errorReason.toLowerCase().includes('cancel') ||
-      (e?.status && e.status === -5000) // Статус -5000 = отмена в E-IMZO
+      (errorMessage && errorMessage.toLowerCase().includes('cancel')) ||
+      (errorMessage && errorMessage.toLowerCase().includes('отмен'))
 
     if (isCancelled) {
       // Пользователь просто отменил операцию - не показываем ошибку

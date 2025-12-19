@@ -206,7 +206,18 @@ export const useEimzo = () => {
       try {
         loadedKey = await eimzo.loadKey(key)
       } catch (loadErr: any) {
-        // Сохраняем reason и status если они есть (например, при отмене ввода пароля)
+        // Проверяем - если пользователь отменил ввод пароля, просто возвращаем null
+        const isUserCancelled =
+          loadErr.status === -5000 ||
+          (loadErr.reason && String(loadErr.reason).toLowerCase().includes('отмен')) ||
+          (loadErr.reason && String(loadErr.reason).toLowerCase().includes('cancel'))
+
+        if (isUserCancelled) {
+          // Пользователь отменил - не ошибка, просто возвращаем null
+          return null
+        }
+
+        // Сохраняем reason и status для других ошибок
         if (loadErr.reason || loadErr.status) {
           const error: any = new Error(loadErr.message || loadErr.reason || 'Failed to load key')
           error.reason = loadErr.reason
