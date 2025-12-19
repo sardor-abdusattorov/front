@@ -211,26 +211,20 @@ export const useEimzo = () => {
       try {
         loadedKey = await eimzo.loadKey(key)
       } catch (loadErr: any) {
-        // Проверяем отмену по статусу И по тексту (на всякий случай)
-        const errorText = String(loadErr.reason || loadErr.message || '').toLowerCase()
-        const isCancelled =
-          loadErr.status === -5000 ||
-          errorText.includes('отмен') ||
-          errorText.includes('cancel')
-
-        if (isCancelled) {
+        // Только проверка по статусу!
+        if (loadErr.status === -5000) {
           return null
         }
 
-        // Сохраняем status для обработки в UI (например -9999 = неправильный пароль)
-        const error: any = new Error(loadErr.message || loadErr.reason || 'Failed to load key')
+        // Сохраняем status для обработки в UI
+        const error: any = new Error(loadErr.message || loadErr.reason)
         error.status = loadErr.status
         error.reason = loadErr.reason
         throw error
       }
 
-      if (!loadedKey || !loadedKey.id) {
-        throw new Error('Failed to load key')
+      if (!loadedKey?.id) {
+        return null
       }
 
       const keyId = loadedKey.id
