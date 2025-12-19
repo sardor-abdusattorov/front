@@ -57,7 +57,32 @@ export const useEimzo = () => {
       // Проверяем версию E-IMZO
       await checkEimzoVersion()
 
-      eKeys.value = await eimzo.listAllUserKeys()
+      const rawKeys = await eimzo.listAllUserKeys()
+
+      // ОТЛАДКА: смотрим что приходит
+      console.log('=== RAW KEYS FROM E-IMZO ===')
+      console.log('Количество ключей:', rawKeys.length)
+      rawKeys.forEach((key: any, index: number) => {
+        console.log(`Ключ ${index + 1}:`, {
+          name: key.name,
+          alias: key.alias,
+          TIN: key.TIN,
+          CN: key.CN,
+          O: key.O
+        })
+
+        // Парсим TIN из alias если его нет
+        if (!key.TIN && key.alias) {
+          const tinMatch = key.alias.match(/1\.2\.860\.3\.16\.1\.1=(\d+)/)
+          if (tinMatch) {
+            key.TIN = tinMatch[1]
+            console.log(`  -> Извлечен TIN из alias: ${key.TIN}`)
+          }
+        }
+      })
+      console.log('===============================')
+
+      eKeys.value = rawKeys
 
       // Загружаем список USB устройств
       await loadUsbDevices()
