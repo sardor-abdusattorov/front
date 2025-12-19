@@ -211,8 +211,14 @@ export const useEimzo = () => {
       try {
         loadedKey = await eimzo.loadKey(key)
       } catch (loadErr: any) {
-        // Статус -5000 = отмена пользователем
-        if (loadErr.status === -5000) {
+        // Проверяем отмену по статусу И по тексту (на всякий случай)
+        const errorText = String(loadErr.reason || loadErr.message || '').toLowerCase()
+        const isCancelled =
+          loadErr.status === -5000 ||
+          errorText.includes('отмен') ||
+          errorText.includes('cancel')
+
+        if (isCancelled) {
           return null
         }
 
