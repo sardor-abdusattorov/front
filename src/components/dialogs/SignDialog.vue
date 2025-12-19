@@ -304,9 +304,16 @@ const signContractWithToken = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    // Показываем ошибку в alert, а не в toast
     const errorMessage = e?.message || getErrorMessage(e)
-    signError.value = errorMessage
+
+    // Проверяем - если пользователь отменил операцию, не показываем ошибку
+    const isCancelled = errorMessage.toLowerCase().includes('cancel') ||
+                        errorMessage.toLowerCase().includes('отмен')
+
+    if (!isCancelled) {
+      // Показываем ошибку только если это настоящая ошибка, а не отмена
+      signError.value = errorMessage
+    }
   }
 }
 
@@ -347,6 +354,15 @@ const signContract = async () => {
   } catch (e: any) {
     // Парсим ошибку для более понятного сообщения
     let errorMessage = e?.message || getErrorMessage(e)
+
+    // Проверяем - если пользователь отменил операцию, не показываем ошибку
+    const isCancelled = errorMessage.toLowerCase().includes('cancel') ||
+                        errorMessage.toLowerCase().includes('отмен')
+
+    if (isCancelled) {
+      // Пользователь просто отменил операцию - не показываем ошибку
+      return
+    }
 
     // Специальная обработка для частых ошибок
     if (errorMessage.includes('password') || errorMessage.includes('пароль')) {
