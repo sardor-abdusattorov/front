@@ -77,6 +77,44 @@ export const useEimzo = () => {
     return hashAlias
   }
 
+  // Подписание через USB токен (без загрузки ключа)
+  const signWithToken = async (
+    tokenType: 'idcard' | 'baikey' | 'ckc',
+    data: string
+  ): Promise<{ hash: string; token: string; id: string } | null> => {
+    try {
+      return new Promise((resolve, reject) => {
+        window.CAPIWS.callFunction(
+          {
+            plugin: 'pkcs7',
+            name: 'create_pkcs7',
+            arguments: [window.Base64.encode(data), tokenType, 'no']
+          },
+          (event: any, responseData: any) => {
+            if (responseData.success) {
+              resolve({
+                hash: responseData.pkcs7_64,
+                token: '',
+                id: tokenType
+              })
+            } else {
+              error.value = responseData.reason || 'Failed to create PKCS7 signature'
+              reject(new Error(responseData.reason || 'Failed to create PKCS7 signature'))
+            }
+          },
+          (err: any) => {
+            error.value = err.message || 'An error occurred while creating PKCS7 signature'
+            reject(err)
+          }
+        )
+      })
+    } catch (err: any) {
+      error.value = err.message || 'An error occurred while signing with token'
+      return null
+    }
+  }
+
+  // Подписание через файл ключа (.p12)
   const getHashESign = async (
     key: ESignKey,
     data: string,
@@ -163,6 +201,7 @@ export const useEimzo = () => {
     isLoading,
     error,
     getHashESign,
+    signWithToken,
     sign,
     loadKey,
     getAliasOfKey

@@ -11,6 +11,14 @@
         <p class="mt-2 text-sm">Убедитесь что USB токен подключен и E-IMZO установлен</p>
       </div>
       <div v-else class="pa-4 border-md rounded d-flex flex-column ga-4">
+        <!-- Выбор способа подписания -->
+        <div class="sign-method-selector mb-4">
+          <v-tabs v-model="signMethod" bg-color="primary">
+            <v-tab value="token">{{ t('sign_with_token') || 'Через USB токен' }}</v-tab>
+            <v-tab value="file">{{ t('sign_with_file') || 'Через файл ключа' }}</v-tab>
+          </v-tabs>
+        </div>
+
         <div class="esp_modal_header">
           <div>{{ t('contractDate') }} {{ signData?.contractEDSInfoModel?.endContractDate }}</div>
           <div>{{ t('commission') }} {{ signData?.contractEDSInfoModel?.percent }}</div>
@@ -39,27 +47,48 @@
             </ul>
           </div>
         </div>
-        <div v-if="correctEKey" class="border-md rounded pa-3 d-flex align-center justify-lg-space-between">
+        <!-- Подписание через USB токен -->
+        <div v-if="signMethod === 'token'" class="border-md rounded pa-3 d-flex flex-column ga-3">
           <div>
-            <h5>{{ t('contracts.organization') }}: {{ correctEKey?.O }}</h5>
-            <h6>{{ t('user.inn') }}: {{ correctEKey?.TIN }}</h6>
+            <h5 class="mb-2">{{ t('select_token_type') || 'Выберите тип токена:' }}</h5>
+            <v-radio-group v-model="tokenType" inline>
+              <v-radio label="ID-Card / USB Token" value="ckc"></v-radio>
+              <v-radio label="BAIK Token" value="baikey"></v-radio>
+            </v-radio-group>
           </div>
-          <base-button @click="signContract">{{ t('contract.menu.sign') }}</base-button>
+          <div class="text-sm text-grey">
+            <p>{{ t('token_instruction') || 'Убедитесь что USB токен подключен к компьютеру' }}</p>
+            <p>{{ t('token_pin_prompt') || 'При нажатии "Подписать" появится окно для ввода PIN-кода' }}</p>
+          </div>
+          <base-button @click="signContractWithToken" class="align-self-end">
+            {{ t('contract.menu.sign') }}
+          </base-button>
         </div>
-        <div v-else class="border-md rounded pa-3 d-flex flex-column ga-2">
-          <h3 class="text-red-accent-4">{{ t('youDontHaveTrueSignKey') }}</h3>
-          <div v-if="expectedTIN" class="text-sm text-grey-darken-2">
-            <div><strong>Требуется ИНН:</strong> {{ expectedTIN }}</div>
-            <div v-if="eKeys.length > 0">
-              <strong>Доступные ключи на токене:</strong>
-              <ul class="mt-2">
-                <li v-for="(key, index) in eKeys" :key="index">
-                  ИНН: {{ key.TIN }} - {{ key.O }}
-                </li>
-              </ul>
+
+        <!-- Подписание через файл ключа -->
+        <div v-else-if="signMethod === 'file'">
+          <div v-if="correctEKey" class="border-md rounded pa-3 d-flex align-center justify-lg-space-between">
+            <div>
+              <h5>{{ t('contracts.organization') }}: {{ correctEKey?.O }}</h5>
+              <h6>{{ t('user.inn') }}: {{ correctEKey?.TIN }}</h6>
             </div>
-            <div v-else class="text-warning mt-2">
-              ⚠️ USB токен не обнаружен или ключи не загружены
+            <base-button @click="signContract">{{ t('contract.menu.sign') }}</base-button>
+          </div>
+          <div v-else class="border-md rounded pa-3 d-flex flex-column ga-2">
+            <h3 class="text-red-accent-4">{{ t('youDontHaveTrueSignKey') }}</h3>
+            <div v-if="expectedTIN" class="text-sm text-grey-darken-2">
+              <div><strong>Требуется ИНН:</strong> {{ expectedTIN }}</div>
+              <div v-if="eKeys.length > 0">
+                <strong>Доступные ключи:</strong>
+                <ul class="mt-2">
+                  <li v-for="(key, index) in eKeys" :key="index">
+                    ИНН: {{ key.TIN }} - {{ key.O }}
+                  </li>
+                </ul>
+              </div>
+              <div v-else class="text-warning mt-2">
+                ⚠️ Файлы ключей не загружены. Попробуйте использовать USB токен.
+              </div>
             </div>
           </div>
         </div>
@@ -79,7 +108,7 @@ import { getErrorMessage } from '@/utils/functions'
 import { useUserStore } from '@/stores/user.store'
 import { GetContractSignResult } from '@/services/contracts/model/contracts.model'
 const { t } = useI18n()
-const { eKeys, getHashESign, isLoading: isEimzoLoading, error: eimzoError } = useEimzo()
+const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError } = useEimzo()
 const userStore = useUserStore()
 const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
@@ -88,6 +117,10 @@ const isModalOpen = ref(false)
 const correctEKey = ref<ESignKey>()
 const expectedTIN = ref<string>('')
 const availableKeys = computed(() => eKeys.value.map((k: ESignKey) => k.TIN).join(', '))
+
+// Выбор способа подписания: 'file' или 'token'
+const signMethod = ref<'file' | 'token'>('token')
+const tokenType = ref<'idcard' | 'baikey' | 'ckc'>('ckc')
 
 const openModal = async (contractId: number) => {
   await fetchContractSign(contractId)
@@ -153,33 +186,72 @@ const fetchContractSign = async (contractId: number) => {
   }
 }
 
-const signContract = async () => {
-  if (!correctEKey.value || !signData.value) return
-  const myHash = await getHashESign(correctEKey.value, signData.value.signToHash)
-  const pairs = correctEKey.value.alias.split(',')
-  const result: any = {}
-
-  if (!myHash?.hash) return
-
-  pairs.forEach((pair: string) => {
-    const [key, value] = pair.split('=')
-    result[key.trim()] = value.trim().toUpperCase()
-  })
-
-  let model = {
-    contractId: signData.value.contractEDSInfoModel.id,
-    signToHash: myHash?.hash,
-    organizationName: correctEKey.value.O,
-    fullName: correctEKey.value.CN,
-    address: `${result.st ? result.st : ''}, ${result.l ? result.l : ''}`
-  }
+// Подписание через USB токен
+const signContractWithToken = async () => {
+  if (!signData.value) return
 
   try {
+    // Вызываем подписание через токен - появится окно ввода PIN-кода
+    const myHash = await signWithToken(tokenType.value, signData.value.signToHash)
+
+    if (!myHash?.hash) {
+      toast.error(t('sign_failed') || 'Не удалось создать подпись')
+      return
+    }
+
+    // Для USB токена используем данные из контракта
+    const orgModel = signData.value.contractEDSInfoModel.firstOrgModel.id === userStore.user?.organizationId
+      ? signData.value.contractEDSInfoModel.firstOrgModel
+      : signData.value.contractEDSInfoModel.secondOrgModel
+
+    let model = {
+      contractId: signData.value.contractEDSInfoModel.id,
+      signToHash: myHash?.hash,
+      organizationName: orgModel.name || '',
+      fullName: orgModel.director || '',
+      address: orgModel.address || ''
+    }
+
     await putContractSign(model)
     toast.success(t('contract.successfully'))
     emit('update')
     isModalOpen.value = false
   } catch (e) {
+    console.error('Ошибка при подписании через токен:', e)
+    toast.error(getErrorMessage(e))
+  }
+}
+
+// Подписание через файл ключа
+const signContract = async () => {
+  if (!correctEKey.value || !signData.value) return
+
+  try {
+    const myHash = await getHashESign(correctEKey.value, signData.value.signToHash)
+    const pairs = correctEKey.value.alias.split(',')
+    const result: any = {}
+
+    if (!myHash?.hash) return
+
+    pairs.forEach((pair: string) => {
+      const [key, value] = pair.split('=')
+      result[key.trim()] = value.trim().toUpperCase()
+    })
+
+    let model = {
+      contractId: signData.value.contractEDSInfoModel.id,
+      signToHash: myHash?.hash,
+      organizationName: correctEKey.value.O,
+      fullName: correctEKey.value.CN,
+      address: `${result.st ? result.st : ''}, ${result.l ? result.l : ''}`
+    }
+
+    await putContractSign(model)
+    toast.success(t('contract.successfully'))
+    emit('update')
+    isModalOpen.value = false
+  } catch (e) {
+    console.error('Ошибка при подписании через файл:', e)
     toast.error(getErrorMessage(e))
   }
 }
