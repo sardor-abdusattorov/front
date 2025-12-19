@@ -305,10 +305,15 @@ const signContractWithToken = async () => {
     isModalOpen.value = false
   } catch (e: any) {
     const errorMessage = e?.message || getErrorMessage(e)
+    const errorReason = e?.reason || ''
 
     // Проверяем - если пользователь отменил операцию, не показываем ошибку
-    const isCancelled = errorMessage.toLowerCase().includes('cancel') ||
-                        errorMessage.toLowerCase().includes('отмен')
+    const isCancelled =
+      errorMessage.toLowerCase().includes('cancel') ||
+      errorMessage.toLowerCase().includes('отмен') ||
+      errorReason.toLowerCase().includes('отмен') ||
+      errorReason.toLowerCase().includes('cancel') ||
+      (e?.status && e.status === -5000) // Статус -5000 = отмена в E-IMZO
 
     if (!isCancelled) {
       // Показываем ошибку только если это настоящая ошибка, а не отмена
@@ -354,10 +359,15 @@ const signContract = async () => {
   } catch (e: any) {
     // Парсим ошибку для более понятного сообщения
     let errorMessage = e?.message || getErrorMessage(e)
+    const errorReason = e?.reason || ''
 
     // Проверяем - если пользователь отменил операцию, не показываем ошибку
-    const isCancelled = errorMessage.toLowerCase().includes('cancel') ||
-                        errorMessage.toLowerCase().includes('отмен')
+    const isCancelled =
+      errorMessage.toLowerCase().includes('cancel') ||
+      errorMessage.toLowerCase().includes('отмен') ||
+      errorReason.toLowerCase().includes('отмен') ||
+      errorReason.toLowerCase().includes('cancel') ||
+      (e?.status && e.status === -5000) // Статус -5000 = отмена в E-IMZO
 
     if (isCancelled) {
       // Пользователь просто отменил операцию - не показываем ошибку
