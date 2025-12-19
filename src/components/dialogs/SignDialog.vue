@@ -108,10 +108,11 @@
         </v-alert>
 
         <!-- Табы внизу -->
-        <v-tabs v-model="tab" bg-color="transparent" color="primary" class="mb-4">
-          <v-tab value="token">{{ t('sign_with_token') }}</v-tab>
-          <v-tab value="file">{{ t('sign_with_file') }}</v-tab>
-        </v-tabs>
+        <div :class="{ 'blocked-content': isSigningBlocked }">
+          <v-tabs v-model="tab" bg-color="transparent" color="primary" class="mb-4" :disabled="isSigningBlocked">
+            <v-tab value="token">{{ t('sign_with_token') }}</v-tab>
+            <v-tab value="file">{{ t('sign_with_file') }}</v-tab>
+          </v-tabs>
 
         <v-window v-model="tab" :touch="false" class="no-transition">
           <!-- Вкладка USB токен -->
@@ -124,7 +125,7 @@
                 item-title="name"
                 item-value="name"
                 :placeholder="usbDevices.length === 0 ? t('no_usb_devices') : t('select_usb_device')"
-                :disabled="usbDevices.length === 0"
+                :disabled="usbDevices.length === 0 || isSigningBlocked"
                 class="mb-4"
               >
                 <template v-if="usbDevices.length === 0" #append>
@@ -168,6 +169,7 @@
             </v-card>
           </v-window-item>
         </v-window>
+        </div>
       </div>
     </v-card>
   </v-dialog>
@@ -416,5 +418,23 @@ defineExpose({
 
 :deep(.v-window-item) {
   transition: none !important;
+}
+
+// Блокировка контента при показе предупреждения
+.blocked-content {
+  opacity: 0.5;
+  pointer-events: none;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+  }
 }
 </style>
