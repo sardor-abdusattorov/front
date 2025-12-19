@@ -93,6 +93,20 @@
           </v-row>
         </div>
 
+        <!-- Ошибка подписания -->
+        <v-alert
+          v-if="signError"
+          type="error"
+          variant="tonal"
+          closable
+          @click:close="signError = null"
+          class="mb-4"
+        >
+          <div class="font-weight-bold">Ошибка при подписании</div>
+          <div class="text-sm mt-2">{{ signError }}</div>
+          <div class="text-sm mt-1">Попробуйте еще раз</div>
+        </v-alert>
+
         <!-- Табы внизу -->
         <v-tabs v-model="tab" bg-color="transparent" color="primary" class="mb-4">
           <v-tab value="token">{{ t('sign_with_token') }}</v-tab>
@@ -187,6 +201,9 @@ const selectedUsbDevice = ref<string>('')
 // Показывать предупреждение о версии
 const showVersionWarning = ref(true)
 
+// Ошибка подписания (отдельно от ошибки загрузки)
+const signError = ref<string | null>(null)
+
 // Автоматически выбираем первое устройство когда они загрузятся
 watch(usbDevices, (devices) => {
   if (devices.length > 0 && !selectedUsbDevice.value) {
@@ -202,8 +219,9 @@ const closeDialog = () => {
 }
 
 const openModal = async (contractId: number) => {
-  // Сбрасываем ошибку при открытии
+  // Сбрасываем ошибки при открытии
   clearError()
+  signError.value = null
   await fetchContractSign(contractId)
   isModalOpen.value = true
 }
@@ -271,6 +289,9 @@ const fetchContractSign = async (contractId: number) => {
 const signContractWithToken = async () => {
   if (!signData.value) return
 
+  // Сбрасываем предыдущую ошибку
+  signError.value = null
+
   try {
     console.log('=== ПОДПИСАНИЕ ЧЕРЕЗ USB ТОКЕН ===')
     console.log('Выбранное устройство:', selectedUsbDevice.value)
@@ -280,7 +301,7 @@ const signContractWithToken = async () => {
     const myHash = await signWithToken(tokenType.value, signData.value.signToHash)
 
     if (!myHash?.hash) {
-      toast.error(t('sign_failed') || 'Не удалось создать подпись')
+      signError.value = 'Не удалось создать подпись. Проверьте подключение USB токена.'
       return
     }
 
@@ -301,9 +322,12 @@ const signContractWithToken = async () => {
     toast.success(t('contract.successfully'))
     emit('update')
     isModalOpen.value = false
-  } catch (e) {
+  } catch (e: any) {
     console.error('Ошибка при подписании через токен:', e)
-    toast.error(getErrorMessage(e))
+
+    // Показываем ошибку в alert, а не в toast
+    const errorMessage = e?.message || getErrorMessage(e)
+    signError.value = errorMessage
   }
 }
 
@@ -311,12 +335,18 @@ const signContractWithToken = async () => {
 const signContract = async () => {
   if (!correctEKey.value || !signData.value) return
 
+  // Сбрасываем предыдущую ошибку
+  signError.value = null
+
   try {
     const myHash = await getHashESign(correctEKey.value, signData.value.signToHash)
     const pairs = correctEKey.value.alias.split(',')
     const result: any = {}
 
-    if (!myHash?.hash) return
+    if (!myHash?.hash) {
+      signError.value = 'Не удалось создать подпись. Попробуйте еще раз.'
+      return
+    }
 
     pairs.forEach((pair: string) => {
       const [key, value] = pair.split('=')
@@ -335,9 +365,20 @@ const signContract = async () => {
     toast.success(t('contract.successfully'))
     emit('update')
     isModalOpen.value = false
-  } catch (e) {
+  } catch (e: any) {
     console.error('Ошибка при подписании через файл:', e)
-    toast.error(getErrorMessage(e))
+
+    // Парсим ошибку для более понятного сообщения
+    let errorMessage = e?.message || getErrorMessage(e)
+
+    // Специальная обработка для частых ошибок
+    if (errorMessage.includes('password') || errorMessage.includes('пароль')) {
+      errorMessage = 'Введен неправильный пароль для файла ключа. Попробуйте еще раз.'
+    } else if (errorMessage.includes('IOException') || errorMessage.includes('поврежден')) {
+      errorMessage = 'PFX-файл поврежден или введен неправильный пароль.'
+    }
+
+    signError.value = errorMessage
   }
 }
 
