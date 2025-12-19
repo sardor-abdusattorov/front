@@ -258,6 +258,11 @@ export const useEimzo = () => {
     return lKey
   }
 
+  // Сброс ошибки
+  const clearError = () => {
+    error.value = null
+  }
+
   initEimzo()
 
   return {
@@ -270,6 +275,7 @@ export const useEimzo = () => {
     signWithToken,
     sign,
     loadKey,
-    getAliasOfKey
+    getAliasOfKey,
+    clearError
   }
 }

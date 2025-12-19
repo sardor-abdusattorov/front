@@ -169,7 +169,7 @@ import { getErrorMessage } from '@/utils/functions'
 import { useUserStore } from '@/stores/user.store'
 import { GetContractSignResult } from '@/services/contracts/model/contracts.model'
 const { t } = useI18n()
-const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError, usbDevices, versionInfo } = useEimzo()
+const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError, usbDevices, versionInfo, clearError } = useEimzo()
 const userStore = useUserStore()
 const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
@@ -197,9 +197,13 @@ watch(usbDevices, (devices) => {
 // Закрытие диалога
 const closeDialog = () => {
   isModalOpen.value = false
+  // Сбрасываем ошибку при закрытии
+  clearError()
 }
 
 const openModal = async (contractId: number) => {
+  // Сбрасываем ошибку при открытии
+  clearError()
   await fetchContractSign(contractId)
   isModalOpen.value = true
 }
