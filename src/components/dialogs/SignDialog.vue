@@ -24,7 +24,7 @@
       <div v-else>
         <!-- Информация о контракте -->
         <div class="mb-4">
-          <div class="d-flex justify-space-between mb-3 text-sm">
+          <div class="d-flex justify-space-between mb-3">
             <div><strong>{{ t('contractDate') }}:</strong> {{ signData?.contractEDSInfoModel?.endContractDate }}</div>
             <div><strong>{{ t('commission') }}:</strong> {{ signData?.contractEDSInfoModel?.percent }}</div>
           </div>
@@ -32,18 +32,28 @@
           <v-row dense>
             <v-col cols="6">
               <v-card variant="outlined" class="pa-3">
-                <div v-if="signData?.contractEDSInfoModel" class="text-sm">
-                  <div class="mb-1"><strong>{{ signData.contractEDSInfoModel.firstOrgModel.name }}</strong></div>
-                  <div>ИНН: {{ signData.contractEDSInfoModel.firstOrgModel.tin }}</div>
-                </div>
+                <ul v-if="signData?.contractEDSInfoModel" class="contract-info-list">
+                  <li>{{ signData.contractEDSInfoModel.firstOrgModel.name || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.firstOrgModel.tin || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.firstOrgModel.director || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.firstOrgModel.regNumberNds || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.firstOrgModel.mfo || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.firstOrgModel.phones || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.firstOrgModel.address || '-' }}</li>
+                </ul>
               </v-card>
             </v-col>
             <v-col cols="6">
               <v-card variant="outlined" class="pa-3">
-                <div v-if="signData?.contractEDSInfoModel" class="text-sm">
-                  <div class="mb-1"><strong>{{ signData.contractEDSInfoModel.secondOrgModel.name }}</strong></div>
-                  <div>ИНН: {{ signData.contractEDSInfoModel.secondOrgModel.tin }}</div>
-                </div>
+                <ul v-if="signData?.contractEDSInfoModel" class="contract-info-list">
+                  <li>{{ signData.contractEDSInfoModel.secondOrgModel.name || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.secondOrgModel.tin || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.secondOrgModel.director || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.secondOrgModel.regNumberNds || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.secondOrgModel.mfo || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.secondOrgModel.phones || '-' }}</li>
+                  <li>{{ signData.contractEDSInfoModel.secondOrgModel.address || '-' }}</li>
+                </ul>
               </v-card>
             </v-col>
           </v-row>
@@ -55,7 +65,7 @@
           <v-tab value="file">{{ t('sign_with_file') }}</v-tab>
         </v-tabs>
 
-        <v-window v-model="tab">
+        <v-window v-model="tab" :touch="false" class="no-transition">
           <!-- Вкладка USB токен -->
           <v-window-item value="token">
             <v-card variant="outlined" class="pa-4">
@@ -300,5 +310,24 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-// Минимальные стили
+.contract-info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+
+  li {
+    padding: 4px 0;
+    min-height: 1.5em;
+  }
+}
+
+// Убираем transition/анимацию для табов
+:deep(.v-window__container) {
+  transition: none !important;
+}
+
+:deep(.v-window-item) {
+  transition: none !important;
+}
 </style>
