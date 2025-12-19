@@ -1,7 +1,16 @@
 <template>
   <v-dialog v-model="isModalOpen" width="700">
     <v-card class="pa-4">
-      <div class="pa-4 border-md rounded d-flex flex-column ga-4">
+      <div v-if="isEimzoLoading" class="pa-8 text-center">
+        <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+        <p class="mt-4">{{ t('loading_keys') || 'Загрузка ключей с USB токена...' }}</p>
+      </div>
+      <div v-else-if="eimzoError" class="pa-4 border-md rounded">
+        <h3 class="text-red-accent-4">{{ t('error_loading_keys') || 'Ошибка загрузки ключей' }}</h3>
+        <p class="mt-2">{{ eimzoError }}</p>
+        <p class="mt-2 text-sm">Убедитесь что USB токен подключен и E-IMZO установлен</p>
+      </div>
+      <div v-else class="pa-4 border-md rounded d-flex flex-column ga-4">
         <div class="esp_modal_header">
           <div>{{ t('contractDate') }} {{ signData?.contractEDSInfoModel?.endContractDate }}</div>
           <div>{{ t('commission') }} {{ signData?.contractEDSInfoModel?.percent }}</div>
@@ -37,9 +46,24 @@
           </div>
           <base-button @click="signContract">{{ t('contract.menu.sign') }}</base-button>
         </div>
-        <div v-else class="border-md rounded pa-3 d-flex align-center justify-lg-space-between">
+        <div v-else class="border-md rounded pa-3 d-flex flex-column ga-2">
           <h3 class="text-red-accent-4">{{ t('youDontHaveTrueSignKey') }}</h3>
+          <div v-if="expectedTIN" class="text-sm text-grey-darken-2">
+            <div><strong>Требуется ИНН:</strong> {{ expectedTIN }}</div>
+            <div v-if="eKeys.length > 0">
+              <strong>Доступные ключи на токене:</strong>
+              <ul class="mt-2">
+                <li v-for="(key, index) in eKeys" :key="index">
+                  ИНН: {{ key.TIN }} - {{ key.O }}
+                </li>
+              </ul>
+            </div>
+            <div v-else class="text-warning mt-2">
+              ⚠️ USB токен не обнаружен или ключи не загружены
+            </div>
+          </div>
         </div>
+      </div>
       </div>
     </v-card>
   </v-dialog>
@@ -55,13 +79,15 @@ import { getErrorMessage } from '@/utils/functions'
 import { useUserStore } from '@/stores/user.store'
 import { GetContractSignResult } from '@/services/contracts/model/contracts.model'
 const { t } = useI18n()
-const { eKeys, getHashESign } = useEimzo()
+const { eKeys, getHashESign, isLoading: isEimzoLoading, error: eimzoError } = useEimzo()
 const userStore = useUserStore()
 const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
 const isModalOpen = ref(false)
 
 const correctEKey = ref<ESignKey>()
+const expectedTIN = ref<string>('')
+const availableKeys = computed(() => eKeys.value.map((k: ESignKey) => k.TIN).join(', '))
 
 const openModal = async (contractId: number) => {
   await fetchContractSign(contractId)
@@ -76,15 +102,51 @@ const fetchContractSign = async (contractId: number) => {
       contractId
     })
 
+    // Функция для нормализации TIN (убираем пробелы, приводим к одному регистру)
+    const normalizeTIN = (tin: string | null | undefined): string => {
+      if (!tin) return ''
+      return tin.toString().replace(/\s+/g, '').trim()
+    }
+
+    // Определяем нужный TIN в зависимости от того, какая организация подписывает
     if (result.contractEDSInfoModel.firstOrgModel.id === userStore.user?.organizationId) {
+      expectedTIN.value = result?.contractEDSInfoModel?.firstOrgModel?.tin
+      const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
+
       correctEKey.value = eKeys.value.find(
-        (key: ESignKey) => key.TIN === result?.contractEDSInfoModel?.firstOrgModel?.tin
+        (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
       )
     } else if (result.contractEDSInfoModel.secondOrgModel.id === userStore.user?.organizationId) {
+      expectedTIN.value = result?.contractEDSInfoModel?.secondOrgModel?.tin
+      const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
+
       correctEKey.value = eKeys.value.find(
-        (key: ESignKey) => key.TIN === result?.contractEDSInfoModel?.secondOrgModel?.tin
+        (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
       )
     }
+
+    // ОТЛАДОЧНАЯ ИНФОРМАЦИЯ - посмотрим что происходит
+    console.log('=== ОТЛАДКА ПОДПИСАНИЯ КОНТРАКТА ===')
+    console.log('Ожидаемый TIN организации:', expectedTIN.value)
+    console.log('ID вашей организации:', userStore.user?.organizationId)
+    console.log('Первая организация:', result.contractEDSInfoModel.firstOrgModel)
+    console.log('Вторая организация:', result.contractEDSInfoModel.secondOrgModel)
+    console.log('Всего ключей на токене:', eKeys.value.length)
+    console.log('Доступные ключи:', eKeys.value.map((k: ESignKey) => ({
+      TIN: k.TIN,
+      CN: k.CN,
+      O: k.O
+    })))
+    console.log('Найден подходящий ключ:', correctEKey.value ? 'ДА' : 'НЕТ')
+    if (correctEKey.value) {
+      console.log('Выбранный ключ:', {
+        TIN: correctEKey.value.TIN,
+        CN: correctEKey.value.CN,
+        O: correctEKey.value.O
+      })
+    }
+    console.log('=====================================')
+
     signData.value = result
   } catch (e) {
     toast.error(getErrorMessage(e))
