@@ -100,7 +100,8 @@ export const useEimzo = () => {
       if (version) {
         // Извлекаем основную версию (например, "5.2.1" -> 5)
         const majorVersion = parseInt(version.split('.')[0])
-        const isOldVersion = majorVersion < 5
+        // ВРЕМЕННО: всегда показываем предупреждение для демонстрации
+        const isOldVersion = true // majorVersion < 5
 
         versionInfo.value = {
           version: version,
