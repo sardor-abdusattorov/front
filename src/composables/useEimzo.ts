@@ -42,6 +42,7 @@ export const useEimzo = () => {
   const isLoading: Ref<boolean> = ref(true)
   const error: Ref<string | null> = ref(null)
   const usbDevices: Ref<UsbDevice[]> = ref([])
+  const versionInfo: Ref<{ version: string; isOldVersion: boolean } | null> = ref(null)
   let eimzo: EsignModule | null = null
 
   const initEimzo = async (): Promise<void> => {
@@ -52,7 +53,10 @@ export const useEimzo = () => {
         eimzo?.addKey(key.domain, key.key)
       })
       await eimzo.installApiKeys()
-      await eimzo.checkVersion()
+
+      // Проверяем версию E-IMZO
+      await checkEimzoVersion()
+
       eKeys.value = await eimzo.listAllUserKeys()
 
       // Загружаем список USB устройств
@@ -61,6 +65,27 @@ export const useEimzo = () => {
       error.value = err.message || 'An error occurred during initialization'
     } finally {
       isLoading.value = false
+    }
+  }
+
+  // Проверка версии E-IMZO
+  const checkEimzoVersion = async (): Promise<void> => {
+    try {
+      const version = await eimzo?.checkVersion()
+      if (version) {
+        // Извлекаем основную версию (например, "5.2.1" -> 5)
+        const majorVersion = parseInt(version.split('.')[0])
+        const isOldVersion = majorVersion < 5
+
+        versionInfo.value = {
+          version: version,
+          isOldVersion: isOldVersion
+        }
+
+        console.log('E-IMZO версия:', version, 'Старая версия:', isOldVersion)
+      }
+    } catch (err: any) {
+      console.warn('Failed to check E-IMZO version:', err)
     }
   }
 
@@ -240,6 +265,7 @@ export const useEimzo = () => {
     isLoading,
     error,
     usbDevices,
+    versionInfo,
     getHashESign,
     signWithToken,
     sign,

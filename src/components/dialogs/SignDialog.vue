@@ -22,6 +22,40 @@
       </div>
 
       <div v-else>
+        <!-- Предупреждение о старой версии E-IMZO -->
+        <v-alert
+          v-if="versionInfo?.isOldVersion && showVersionWarning"
+          type="warning"
+          variant="tonal"
+          closable
+          @click:close="showVersionWarning = false"
+          class="mb-4"
+        >
+          <div class="d-flex flex-column ga-2">
+            <div class="font-weight-bold">{{ t('old_eimzo_version') }}</div>
+            <div class="text-sm">{{ t('old_eimzo_version_desc') }} (текущая версия: {{ versionInfo.version }})</div>
+            <div class="d-flex ga-2 mt-2">
+              <v-btn
+                color="primary"
+                size="small"
+                variant="elevated"
+                href="https://e-imzo.soliq.uz/"
+                target="_blank"
+              >
+                {{ t('download_eimzo') }}
+              </v-btn>
+              <v-btn
+                color="grey"
+                size="small"
+                variant="text"
+                @click="showVersionWarning = false"
+              >
+                {{ t('continue_anyway') }}
+              </v-btn>
+            </div>
+          </div>
+        </v-alert>
+
         <!-- Информация о контракте -->
         <div class="mb-4">
           <div class="d-flex justify-space-between mb-3">
@@ -135,7 +169,7 @@ import { getErrorMessage } from '@/utils/functions'
 import { useUserStore } from '@/stores/user.store'
 import { GetContractSignResult } from '@/services/contracts/model/contracts.model'
 const { t } = useI18n()
-const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError, usbDevices } = useEimzo()
+const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError, usbDevices, versionInfo } = useEimzo()
 const userStore = useUserStore()
 const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
@@ -149,6 +183,9 @@ const availableKeys = computed(() => eKeys.value.map((k: ESignKey) => k.TIN).joi
 const tab = ref<'token' | 'file'>('token')
 const tokenType = ref<'idcard' | 'baikey' | 'ckc'>('ckc')
 const selectedUsbDevice = ref<string>('')
+
+// Показывать предупреждение о версии
+const showVersionWarning = ref(true)
 
 // Автоматически выбираем первое устройство когда они загрузятся
 watch(usbDevices, (devices) => {
