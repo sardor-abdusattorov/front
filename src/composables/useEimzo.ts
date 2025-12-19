@@ -187,19 +187,19 @@ export const useEimzo = () => {
                 id: tokenType
               })
             } else {
-              error.value = responseData.reason || 'Failed to create PKCS7 signature'
+              // Не устанавливаем error.value - он только для ошибок инициализации
               reject(new Error(responseData.reason || 'Failed to create PKCS7 signature'))
             }
           },
           (err: any) => {
-            error.value = err.message || 'An error occurred while creating PKCS7 signature'
+            // Не устанавливаем error.value - он только для ошибок инициализации
             reject(err)
           }
         )
       })
     } catch (err: any) {
-      error.value = err.message || 'An error occurred while signing with token'
-      return null
+      // Не устанавливаем error.value - он только для ошибок инициализации
+      throw err
     }
   }
 
@@ -209,16 +209,14 @@ export const useEimzo = () => {
     data: string,
   ): Promise<{ hash: string; token: string; id: string } | null> => {
     if (!eimzo || eKeys.value.length === 0) {
-      error.value = 'E-Imzo is not initialized or no keys available'
-      return null
+      throw new Error('E-Imzo is not initialized or no keys available')
     }
 
     try {
       // Load key first
       const loadedKey = await eimzo.loadKey(key)
       if (!loadedKey || !loadedKey.id) {
-        error.value = 'Failed to load key'
-        return null
+        throw new Error('Failed to load key')
       }
 
       const keyId = loadedKey.id
@@ -240,19 +238,19 @@ export const useEimzo = () => {
                 id: keyId
               })
             } else {
-              error.value = responseData.reason || 'Failed to create PKCS7 signature'
+              // Не устанавливаем error.value - он только для ошибок инициализации
               reject(new Error(responseData.reason || 'Failed to create PKCS7 signature'))
             }
           },
           (err: any) => {
-            error.value = err.message || 'An error occurred while creating PKCS7 signature'
+            // Не устанавливаем error.value - он только для ошибок инициализации
             reject(err)
           }
         )
       })
     } catch (err: any) {
-      error.value = err.message || 'An error occurred while getting the hash e-signature'
-      return null
+      // Не устанавливаем error.value - он только для ошибок инициализации
+      throw err
     }
   }
 
