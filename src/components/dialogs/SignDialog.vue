@@ -12,10 +12,10 @@
       </div>
       <div v-else class="pa-4 border-md rounded d-flex flex-column ga-4">
         <!-- Выбор способа подписания -->
-        <div class="sign-method-selector mb-4">
-          <v-tabs v-model="signMethod" bg-color="primary">
-            <v-tab value="token">{{ t('sign_with_token') || 'Через USB токен' }}</v-tab>
-            <v-tab value="file">{{ t('sign_with_file') || 'Через файл ключа' }}</v-tab>
+        <div class="sign-method-selector">
+          <v-tabs v-model="signMethod" bg-color="primary" class="mb-4">
+            <v-tab value="token">{{ t('sign_with_token') }}</v-tab>
+            <v-tab value="file">{{ t('sign_with_file') }}</v-tab>
           </v-tabs>
         </div>
 
@@ -48,49 +48,91 @@
           </div>
         </div>
         <!-- Подписание через USB токен -->
-        <div v-if="signMethod === 'token'" class="border-md rounded pa-3 d-flex flex-column ga-3">
-          <div>
-            <h5 class="mb-2">{{ t('select_token_type') || 'Выберите тип токена:' }}</h5>
-            <v-radio-group v-model="tokenType" inline>
-              <v-radio label="ID-Card / USB Token" value="ckc"></v-radio>
-              <v-radio label="BAIK Token" value="baikey"></v-radio>
-            </v-radio-group>
+        <div v-if="signMethod === 'token'" class="border-md rounded pa-4">
+          <v-row>
+            <v-col cols="12">
+              <base-select
+                v-model="selectedUsbDevice"
+                :label="t('select_usb_device')"
+                :items="usbDevices"
+                item-title="name"
+                item-value="name"
+                :placeholder="usbDevices.length === 0 ? t('no_usb_devices') : t('select_usb_device')"
+                :disabled="usbDevices.length === 0"
+              >
+                <template v-if="usbDevices.length === 0" #append>
+                  <v-icon color="warning">mdi-alert-circle-outline</v-icon>
+                </template>
+              </base-select>
+            </v-col>
+          </v-row>
+
+          <div class="d-flex justify-end mt-4">
+            <base-button
+              @click="signContractWithToken"
+              :disabled="!selectedUsbDevice"
+            >
+              {{ t('contract.menu.sign') }}
+            </base-button>
           </div>
-          <div class="text-sm text-grey">
-            <p>{{ t('token_instruction') || 'Убедитесь что USB токен подключен к компьютеру' }}</p>
-            <p>{{ t('token_pin_prompt') || 'При нажатии "Подписать" появится окно для ввода PIN-кода' }}</p>
-          </div>
-          <base-button @click="signContractWithToken" class="align-self-end">
-            {{ t('contract.menu.sign') }}
-          </base-button>
         </div>
 
         <!-- Подписание через файл ключа -->
-        <div v-else-if="signMethod === 'file'">
-          <div v-if="correctEKey" class="border-md rounded pa-3 d-flex align-center justify-lg-space-between">
-            <div>
-              <h5>{{ t('contracts.organization') }}: {{ correctEKey?.O }}</h5>
-              <h6>{{ t('user.inn') }}: {{ correctEKey?.TIN }}</h6>
-            </div>
-            <base-button @click="signContract">{{ t('contract.menu.sign') }}</base-button>
-          </div>
-          <div v-else class="border-md rounded pa-3 d-flex flex-column ga-2">
-            <h3 class="text-red-accent-4">{{ t('youDontHaveTrueSignKey') }}</h3>
-            <div v-if="expectedTIN" class="text-sm text-grey-darken-2">
-              <div><strong>Требуется ИНН:</strong> {{ expectedTIN }}</div>
-              <div v-if="eKeys.length > 0">
-                <strong>Доступные ключи:</strong>
-                <ul class="mt-2">
-                  <li v-for="(key, index) in eKeys" :key="index">
-                    ИНН: {{ key.TIN }} - {{ key.O }}
-                  </li>
-                </ul>
-              </div>
-              <div v-else class="text-warning mt-2">
-                ⚠️ Файлы ключей не загружены. Попробуйте использовать USB токен.
-              </div>
+        <div v-else-if="signMethod === 'file'" class="border-md rounded pa-4">
+          <div v-if="correctEKey">
+            <v-card variant="outlined" class="mb-4">
+              <v-card-text>
+                <div class="d-flex flex-column ga-2">
+                  <div>
+                    <span class="text-grey">{{ t('contracts.organization') }}:</span>
+                    <span class="font-weight-bold ml-2">{{ correctEKey?.O }}</span>
+                  </div>
+                  <div>
+                    <span class="text-grey">{{ t('user.inn') }}:</span>
+                    <span class="font-weight-bold ml-2">{{ correctEKey?.TIN }}</span>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+
+            <div class="d-flex justify-end">
+              <base-button @click="signContract">
+                {{ t('contract.menu.sign') }}
+              </base-button>
             </div>
           </div>
+
+          <v-alert v-else type="error" variant="tonal" class="mb-0">
+            <div class="d-flex flex-column ga-2">
+              <div class="font-weight-bold">{{ t('youDontHaveTrueSignKey') }}</div>
+              <div v-if="expectedTIN" class="text-sm">
+                <div class="mb-2">
+                  <strong>Требуется ИНН:</strong> {{ expectedTIN }}
+                </div>
+                <div v-if="eKeys.length > 0">
+                  <strong>Доступные ключи:</strong>
+                  <v-list density="compact" class="mt-2 bg-transparent">
+                    <v-list-item
+                      v-for="(key, index) in eKeys"
+                      :key="index"
+                      density="compact"
+                      class="px-0"
+                    >
+                      <template #prepend>
+                        <v-icon size="small" color="primary">mdi-key</v-icon>
+                      </template>
+                      <v-list-item-title class="text-sm">
+                        ИНН: {{ key.TIN }} - {{ key.O }}
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </div>
+                <v-alert v-else type="warning" density="compact" class="mt-2">
+                  Файлы ключей не загружены. Попробуйте использовать USB токен.
+                </v-alert>
+              </div>
+            </div>
+          </v-alert>
         </div>
       </div>
     </v-card>
@@ -107,7 +149,7 @@ import { getErrorMessage } from '@/utils/functions'
 import { useUserStore } from '@/stores/user.store'
 import { GetContractSignResult } from '@/services/contracts/model/contracts.model'
 const { t } = useI18n()
-const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError } = useEimzo()
+const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError, usbDevices } = useEimzo()
 const userStore = useUserStore()
 const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
@@ -120,6 +162,14 @@ const availableKeys = computed(() => eKeys.value.map((k: ESignKey) => k.TIN).joi
 // Выбор способа подписания: 'file' или 'token'
 const signMethod = ref<'file' | 'token'>('token')
 const tokenType = ref<'idcard' | 'baikey' | 'ckc'>('ckc')
+const selectedUsbDevice = ref<string>('')
+
+// Автоматически выбираем первое устройство когда они загрузятся
+watch(usbDevices, (devices) => {
+  if (devices.length > 0 && !selectedUsbDevice.value) {
+    selectedUsbDevice.value = devices[0].name
+  }
+}, { immediate: true })
 
 const openModal = async (contractId: number) => {
   await fetchContractSign(contractId)
@@ -190,6 +240,10 @@ const signContractWithToken = async () => {
   if (!signData.value) return
 
   try {
+    console.log('=== ПОДПИСАНИЕ ЧЕРЕЗ USB ТОКЕН ===')
+    console.log('Выбранное устройство:', selectedUsbDevice.value)
+    console.log('Тип токена:', tokenType.value)
+
     // Вызываем подписание через токен - появится окно ввода PIN-кода
     const myHash = await signWithToken(tokenType.value, signData.value.signToHash)
 

@@ -32,10 +32,16 @@ const API_KEYS = [
   }
 ]
 
+interface UsbDevice {
+  id: string
+  name: string
+}
+
 export const useEimzo = () => {
   const eKeys: Ref<ESignKey[]> = ref([])
   const isLoading: Ref<boolean> = ref(true)
   const error: Ref<string | null> = ref(null)
+  const usbDevices: Ref<UsbDevice[]> = ref([])
   let eimzo: EsignModule | null = null
 
   const initEimzo = async (): Promise<void> => {
@@ -48,10 +54,43 @@ export const useEimzo = () => {
       await eimzo.installApiKeys()
       await eimzo.checkVersion()
       eKeys.value = await eimzo.listAllUserKeys()
+
+      // Загружаем список USB устройств
+      await loadUsbDevices()
     } catch (err: any) {
       error.value = err.message || 'An error occurred during initialization'
     } finally {
       isLoading.value = false
+    }
+  }
+
+  // Загрузка списка USB устройств (ID-Card readers)
+  const loadUsbDevices = async (): Promise<void> => {
+    try {
+      return new Promise((resolve) => {
+        window.CAPIWS.callFunction(
+          {
+            plugin: 'idcard',
+            name: 'list_readers'
+          },
+          (event: any, responseData: any) => {
+            if (responseData.success && responseData.readers) {
+              usbDevices.value = responseData.readers.map((reader: string, index: number) => ({
+                id: `reader_${index}`,
+                name: reader
+              }))
+            }
+            resolve()
+          },
+          () => {
+            // Если не удалось получить список - не проблема, просто оставим пустой массив
+            resolve()
+          }
+        )
+      })
+    } catch (err: any) {
+      // Не критичная ошибка, можно продолжать работу
+      console.warn('Failed to load USB devices:', err)
     }
   }
 
@@ -200,6 +239,7 @@ export const useEimzo = () => {
     eKeys,
     isLoading,
     error,
+    usbDevices,
     getHashESign,
     signWithToken,
     sign,
