@@ -93,7 +93,6 @@
           </div>
         </div>
       </div>
-      </div>
     </v-card>
   </v-dialog>
 </template>
