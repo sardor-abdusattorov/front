@@ -264,28 +264,6 @@ const fetchContractSign = async (contractId: number) => {
       )
     }
 
-    // ОТЛАДОЧНАЯ ИНФОРМАЦИЯ - посмотрим что происходит
-    console.log('=== ОТЛАДКА ПОДПИСАНИЯ КОНТРАКТА ===')
-    console.log('Ожидаемый TIN организации:', expectedTIN.value)
-    console.log('ID вашей организации:', userStore.user?.organizationId)
-    console.log('Первая организация:', result.contractEDSInfoModel.firstOrgModel)
-    console.log('Вторая организация:', result.contractEDSInfoModel.secondOrgModel)
-    console.log('Всего ключей на токене:', eKeys.value.length)
-    console.log('Доступные ключи:', eKeys.value.map((k: ESignKey) => ({
-      TIN: k.TIN,
-      CN: k.CN,
-      O: k.O
-    })))
-    console.log('Найден подходящий ключ:', correctEKey.value ? 'ДА' : 'НЕТ')
-    if (correctEKey.value) {
-      console.log('Выбранный ключ:', {
-        TIN: correctEKey.value.TIN,
-        CN: correctEKey.value.CN,
-        O: correctEKey.value.O
-      })
-    }
-    console.log('=====================================')
-
     signData.value = result
   } catch (e) {
     toast.error(getErrorMessage(e))
@@ -300,10 +278,6 @@ const signContractWithToken = async () => {
   signError.value = null
 
   try {
-    console.log('=== ПОДПИСАНИЕ ЧЕРЕЗ USB ТОКЕН ===')
-    console.log('Выбранное устройство:', selectedUsbDevice.value)
-    console.log('Тип токена:', tokenType.value)
-
     // Вызываем подписание через токен - появится окно ввода PIN-кода
     const myHash = await signWithToken(tokenType.value, signData.value.signToHash)
 
@@ -330,8 +304,6 @@ const signContractWithToken = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    console.error('Ошибка при подписании через токен:', e)
-
     // Показываем ошибку в alert, а не в toast
     const errorMessage = e?.message || getErrorMessage(e)
     signError.value = errorMessage
@@ -373,8 +345,6 @@ const signContract = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    console.error('Ошибка при подписании через файл:', e)
-
     // Парсим ошибку для более понятного сообщения
     let errorMessage = e?.message || getErrorMessage(e)
 
@@ -392,10 +362,6 @@ const signContract = async () => {
 defineExpose({
   openModal
 })
-
-// onMounted(async () => {
-//   console.log(userStore?.user?.organizationId)
-// })
 </script>
 
 <style lang="scss" scoped>

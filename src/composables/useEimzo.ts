@@ -59,28 +59,15 @@ export const useEimzo = () => {
 
       const rawKeys = await eimzo.listAllUserKeys()
 
-      // ОТЛАДКА: смотрим что приходит
-      console.log('=== RAW KEYS FROM E-IMZO ===')
-      console.log('Количество ключей:', rawKeys.length)
-      rawKeys.forEach((key: any, index: number) => {
-        console.log(`Ключ ${index + 1}:`, {
-          name: key.name,
-          alias: key.alias,
-          TIN: key.TIN,
-          CN: key.CN,
-          O: key.O
-        })
-
-        // Парсим TIN из alias если его нет
+      // Парсим TIN из alias если его нет
+      rawKeys.forEach((key: any) => {
         if (!key.TIN && key.alias) {
           const tinMatch = key.alias.match(/1\.2\.860\.3\.16\.1\.1=(\d+)/)
           if (tinMatch) {
             key.TIN = tinMatch[1]
-            console.log(`  -> Извлечен TIN из alias: ${key.TIN}`)
           }
         }
       })
-      console.log('===============================')
 
       eKeys.value = rawKeys
 
@@ -100,18 +87,15 @@ export const useEimzo = () => {
       if (version) {
         // Извлекаем основную версию (например, "5.2.1" -> 5)
         const majorVersion = parseInt(version.split('.')[0])
-        // ВРЕМЕННО: всегда показываем предупреждение для демонстрации
-        const isOldVersion = true // majorVersion < 5
+        const isOldVersion = majorVersion < 5
 
         versionInfo.value = {
           version: version,
           isOldVersion: isOldVersion
         }
-
-        console.log('E-IMZO версия:', version, 'Старая версия:', isOldVersion)
       }
     } catch (err: any) {
-      console.warn('Failed to check E-IMZO version:', err)
+      // Игнорируем ошибку проверки версии
     }
   }
 
@@ -141,7 +125,6 @@ export const useEimzo = () => {
       })
     } catch (err: any) {
       // Не критичная ошибка, можно продолжать работу
-      console.warn('Failed to load USB devices:', err)
     }
   }
 
