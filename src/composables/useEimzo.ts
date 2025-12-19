@@ -202,7 +202,20 @@ export const useEimzo = () => {
 
     try {
       // Load key first
-      const loadedKey = await eimzo.loadKey(key)
+      let loadedKey
+      try {
+        loadedKey = await eimzo.loadKey(key)
+      } catch (loadErr: any) {
+        // Сохраняем reason и status если они есть (например, при отмене ввода пароля)
+        if (loadErr.reason || loadErr.status) {
+          const error: any = new Error(loadErr.message || loadErr.reason || 'Failed to load key')
+          error.reason = loadErr.reason
+          error.status = loadErr.status
+          throw error
+        }
+        throw loadErr
+      }
+
       if (!loadedKey || !loadedKey.id) {
         throw new Error('Failed to load key')
       }
