@@ -133,7 +133,7 @@
               </base-select>
 
               <div class="d-flex justify-end">
-                <base-button @click="signContractWithToken" :disabled="!selectedUsbDevice">
+                <base-button @click="signContractWithToken" :disabled="!selectedUsbDevice || isSigningBlocked">
                   {{ t('contract.menu.sign') }}
                 </base-button>
               </div>
@@ -156,7 +156,7 @@
                 </div>
 
                 <div class="d-flex justify-end">
-                  <base-button @click="signContract">
+                  <base-button @click="signContract" :disabled="isSigningBlocked">
                     {{ t('contract.menu.sign') }}
                   </base-button>
                 </div>
@@ -200,6 +200,11 @@ const selectedUsbDevice = ref<string>('')
 
 // Показывать предупреждение о версии
 const showVersionWarning = ref(true)
+
+// Блокировать подписание пока показывается предупреждение о версии
+const isSigningBlocked = computed(() => {
+  return versionInfo.value?.isOldVersion && showVersionWarning.value
+})
 
 // Ошибка подписания (отдельно от ошибки загрузки)
 const signError = ref<string | null>(null)
