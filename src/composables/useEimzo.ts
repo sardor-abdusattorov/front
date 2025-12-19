@@ -172,7 +172,11 @@ export const useEimzo = () => {
               })
             } else {
               // Не устанавливаем error.value - он только для ошибок инициализации
-              reject(new Error(responseData.reason || 'Failed to create PKCS7 signature'))
+              // Сохраняем reason и status для проверки на отмену
+              const error: any = new Error(responseData.reason || 'Failed to create PKCS7 signature')
+              error.reason = responseData.reason
+              error.status = responseData.status
+              reject(error)
             }
           },
           (err: any) => {
@@ -223,7 +227,11 @@ export const useEimzo = () => {
               })
             } else {
               // Не устанавливаем error.value - он только для ошибок инициализации
-              reject(new Error(responseData.reason || 'Failed to create PKCS7 signature'))
+              // Сохраняем reason и status для проверки на отмену
+              const error: any = new Error(responseData.reason || 'Failed to create PKCS7 signature')
+              error.reason = responseData.reason
+              error.status = responseData.status
+              reject(error)
             }
           },
           (err: any) => {
