@@ -171,8 +171,15 @@ export const useEimzo = () => {
                 id: tokenType
               })
             } else {
-              // Статус -5000 = отмена пользователем (или текст reason содержит "отмен")
-              if (responseData.status == -5000 || responseData.reason?.toLowerCase().includes('отмен')) {
+              // Усиленная проверка на отмену пользователем
+              const isCancelled =
+                responseData.status === -5000 ||
+                responseData.status === '-5000' ||
+                responseData.status == -5000 ||
+                responseData.reason?.toLowerCase().includes('отмен') ||
+                responseData.reason?.toLowerCase().includes('cancel')
+
+              if (isCancelled) {
                 // Пользователь отменил операцию - возвращаем null без ошибки
                 resolve(null as any)
                 return
@@ -212,8 +219,18 @@ export const useEimzo = () => {
       try {
         loadedKey = await eimzo.loadKey(key)
       } catch (loadErr: any) {
-        // Проверка на отмену пользователем (status -5000 или текст reason содержит "отмен")
-        if (loadErr.status == -5000 || loadErr.reason?.toLowerCase().includes('отмен')) {
+        // Усиленная проверка на отмену пользователем
+        // Проверяем status: -5000 (число), '-5000' (строка), или reason содержит "отмен"/"cancel"
+        const isCancelled =
+          loadErr.status === -5000 ||
+          loadErr.status === '-5000' ||
+          loadErr.status == -5000 ||
+          loadErr.reason?.toLowerCase().includes('отмен') ||
+          loadErr.reason?.toLowerCase().includes('cancel') ||
+          loadErr.message?.toLowerCase().includes('отмен') ||
+          loadErr.message?.toLowerCase().includes('cancel')
+
+        if (isCancelled) {
           // Пользователь отменил операцию - возвращаем null без ошибки
           return null
         }
@@ -248,8 +265,15 @@ export const useEimzo = () => {
                 id: keyId
               })
             } else {
-              // Статус -5000 = отмена пользователем (или текст reason содержит "отмен")
-              if (responseData.status == -5000 || responseData.reason?.toLowerCase().includes('отмен')) {
+              // Усиленная проверка на отмену пользователем
+              const isCancelled =
+                responseData.status === -5000 ||
+                responseData.status === '-5000' ||
+                responseData.status == -5000 ||
+                responseData.reason?.toLowerCase().includes('отмен') ||
+                responseData.reason?.toLowerCase().includes('cancel')
+
+              if (isCancelled) {
                 // Пользователь отменил операцию - возвращаем null без ошибки
                 resolve(null as any)
                 return

@@ -304,15 +304,23 @@ const signContractWithToken = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    // Статус -5000 = отмена пользователем
-    // Проверяем status (нестрогое сравнение на случай если строка) и текст reason
-    if (e?.status == -5000 || e?.reason?.toLowerCase().includes('отмен')) {
+    // Усиленная проверка на отмену пользователем
+    const isCancelled =
+      e?.status === -5000 ||
+      e?.status === '-5000' ||
+      e?.status == -5000 ||
+      e?.reason?.toLowerCase().includes('отмен') ||
+      e?.reason?.toLowerCase().includes('cancel') ||
+      e?.message?.toLowerCase().includes('отмен') ||
+      e?.message?.toLowerCase().includes('cancel')
+
+    if (isCancelled) {
       // Пользователь просто отменил операцию - это не ошибка, не показываем уведомление
       return
     }
 
     // Статус -9999 = неправильный пароль
-    if (e?.status == -9999) {
+    if (e?.status == -9999 || e?.status === '-9999') {
       signError.value = 'Введен неправильный пароль. Попробуйте еще раз.'
       return
     }
@@ -364,15 +372,23 @@ const signContract = async () => {
     emit('update')
     isModalOpen.value = false
   } catch (e: any) {
-    // Статус -5000 = отмена пользователем
-    // Проверяем status (нестрогое сравнение на случай если строка) и текст reason
-    if (e?.status == -5000 || e?.reason?.toLowerCase().includes('отмен')) {
+    // Усиленная проверка на отмену пользователем
+    const isCancelled =
+      e?.status === -5000 ||
+      e?.status === '-5000' ||
+      e?.status == -5000 ||
+      e?.reason?.toLowerCase().includes('отмен') ||
+      e?.reason?.toLowerCase().includes('cancel') ||
+      e?.message?.toLowerCase().includes('отмен') ||
+      e?.message?.toLowerCase().includes('cancel')
+
+    if (isCancelled) {
       // Пользователь просто отменил операцию - это не ошибка, не показываем уведомление
       return
     }
 
     // Статус -9999 = неправильный пароль
-    if (e?.status == -9999) {
+    if (e?.status == -9999 || e?.status === '-9999') {
       signError.value = 'Введен неправильный пароль. Попробуйте еще раз.'
       return
     }
