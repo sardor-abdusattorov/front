@@ -171,13 +171,14 @@ export const useEimzo = () => {
                 id: tokenType
               })
             } else {
-              // Статус -5000 = отмена пользователем
-              if (responseData.status === -5000) {
+              // Статус -5000 = отмена пользователем (или текст reason содержит "отмен")
+              if (responseData.status == -5000 || responseData.reason?.toLowerCase().includes('отмен')) {
+                // Пользователь отменил операцию - возвращаем null без ошибки
                 resolve(null as any)
                 return
               }
 
-              // Сохраняем status для обработки в UI
+              // Сохраняем status и reason для обработки в UI
               const error: any = new Error(responseData.reason || 'Failed to create PKCS7 signature')
               error.status = responseData.status
               error.reason = responseData.reason
@@ -211,13 +212,14 @@ export const useEimzo = () => {
       try {
         loadedKey = await eimzo.loadKey(key)
       } catch (loadErr: any) {
-        // Только проверка по статусу!
-        if (loadErr.status === -5000) {
+        // Проверка на отмену пользователем (status -5000 или текст reason содержит "отмен")
+        if (loadErr.status == -5000 || loadErr.reason?.toLowerCase().includes('отмен')) {
+          // Пользователь отменил операцию - возвращаем null без ошибки
           return null
         }
 
-        // Сохраняем status для обработки в UI
-        const error: any = new Error(loadErr.message || loadErr.reason)
+        // Сохраняем status и reason для обработки в UI
+        const error: any = new Error(loadErr.reason || loadErr.message || 'Ошибка при загрузке ключа')
         error.status = loadErr.status
         error.reason = loadErr.reason
         throw error
@@ -246,13 +248,14 @@ export const useEimzo = () => {
                 id: keyId
               })
             } else {
-              // Статус -5000 = отмена пользователем
-              if (responseData.status === -5000) {
+              // Статус -5000 = отмена пользователем (или текст reason содержит "отмен")
+              if (responseData.status == -5000 || responseData.reason?.toLowerCase().includes('отмен')) {
+                // Пользователь отменил операцию - возвращаем null без ошибки
                 resolve(null as any)
                 return
               }
 
-              // Сохраняем status для обработки в UI
+              // Сохраняем status и reason для обработки в UI
               const error: any = new Error(responseData.reason || 'Failed to create PKCS7 signature')
               error.status = responseData.status
               error.reason = responseData.reason
