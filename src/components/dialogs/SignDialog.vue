@@ -93,20 +93,6 @@
           </v-row>
         </div>
 
-        <!-- Ошибка подписания -->
-        <v-alert
-          v-if="signError"
-          type="error"
-          variant="tonal"
-          closable
-          @click:close="signError = null"
-          class="mb-4"
-        >
-          <div class="font-weight-bold">Ошибка при подписании</div>
-          <div class="text-sm mt-2">{{ signError }}</div>
-          <div class="text-sm mt-1">Попробуйте еще раз</div>
-        </v-alert>
-
         <!-- Табы внизу -->
         <div :class="{ 'blocked-content': isSigningBlocked }">
           <v-tabs v-model="tab" bg-color="transparent" color="primary" class="mb-4" :disabled="isSigningBlocked">
@@ -208,9 +194,6 @@ const isSigningBlocked = computed(() => {
   return versionInfo.value?.isOldVersion && showVersionWarning.value
 })
 
-// Ошибка подписания (отдельно от ошибки загрузки)
-const signError = ref<string | null>(null)
-
 // Автоматически выбираем первое устройство когда они загрузятся
 watch(usbDevices, (devices) => {
   if (devices.length > 0 && !selectedUsbDevice.value) {
@@ -228,7 +211,6 @@ const closeDialog = () => {
 const openModal = async (contractId: number) => {
   // Сбрасываем ошибки при открытии
   clearError()
-  signError.value = null
   await fetchContractSign(contractId)
   isModalOpen.value = true
 }
@@ -274,15 +256,11 @@ const fetchContractSign = async (contractId: number) => {
 const signContractWithToken = async () => {
   if (!signData.value) return
 
-  // Сбрасываем предыдущую ошибку
-  signError.value = null
-
   try {
     // Вызываем подписание через токен - появится окно ввода PIN-кода
     const myHash = await signWithToken(tokenType.value, signData.value.signToHash)
 
     if (!myHash?.hash) {
-      signError.value = 'Не удалось создать подпись. Проверьте подключение USB токена.'
       return
     }
 
@@ -319,24 +297,13 @@ const signContractWithToken = async () => {
       return
     }
 
-    // Статус -9999 = неправильный пароль
-    if (e?.status == -9999 || e?.status === '-9999') {
-      signError.value = 'Введен неправильный пароль. Попробуйте еще раз.'
-      return
-    }
-
-    // Остальные ошибки - показываем понятное сообщение
-    const errorMsg = e?.reason || e?.message || getErrorMessage(e)
-    signError.value = errorMsg || 'Произошла ошибка при подписании. Попробуйте еще раз.'
+    // Остальные ошибки - просто игнорируем, не показываем никакие уведомления
   }
 }
 
 // Подписание через файл ключа
 const signContract = async () => {
   if (!correctEKey.value || !signData.value) return
-
-  // Сбрасываем предыдущую ошибку
-  signError.value = null
 
   try {
     const myHash = await getHashESign(correctEKey.value, signData.value.signToHash)
@@ -350,7 +317,6 @@ const signContract = async () => {
     const result: any = {}
 
     if (!myHash.hash) {
-      signError.value = 'Не удалось создать подпись. Попробуйте еще раз.'
       return
     }
 
@@ -387,15 +353,7 @@ const signContract = async () => {
       return
     }
 
-    // Статус -9999 = неправильный пароль
-    if (e?.status == -9999 || e?.status === '-9999') {
-      signError.value = 'Введен неправильный пароль. Попробуйте еще раз.'
-      return
-    }
-
-    // Остальные ошибки - показываем понятное сообщение
-    const errorMsg = e?.reason || e?.message || getErrorMessage(e)
-    signError.value = errorMsg || 'Произошла ошибка при подписании. Попробуйте еще раз.'
+    // Остальные ошибки - просто игнорируем, не показываем никакие уведомления
   }
 }
 
