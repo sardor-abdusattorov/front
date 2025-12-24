@@ -220,7 +220,8 @@ export const useEimzo = () => {
         loadedKey = await eimzo.loadKey(key)
       } catch (loadErr: any) {
         // Усиленная проверка на отмену пользователем
-        // Проверяем status: -5000 (число), '-5000' (строка), или reason содержит "отмен"/"cancel"
+        // Проверяем status: -5000 (число), '-5000' (строка), или reason/message содержит "отмен"/"cancel"
+        const errorString = JSON.stringify(loadErr).toLowerCase()
         const isCancelled =
           loadErr.status === -5000 ||
           loadErr.status === '-5000' ||
@@ -228,7 +229,10 @@ export const useEimzo = () => {
           loadErr.reason?.toLowerCase().includes('отмен') ||
           loadErr.reason?.toLowerCase().includes('cancel') ||
           loadErr.message?.toLowerCase().includes('отмен') ||
-          loadErr.message?.toLowerCase().includes('cancel')
+          loadErr.message?.toLowerCase().includes('cancel') ||
+          errorString.includes('отмен') ||
+          errorString.includes('cancel') ||
+          errorString.includes('-5000')
 
         if (isCancelled) {
           // Пользователь отменил операцию - возвращаем null без ошибки
