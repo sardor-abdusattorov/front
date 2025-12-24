@@ -297,7 +297,8 @@ const signContractWithToken = async () => {
       return
     }
 
-    // Остальные ошибки - просто игнорируем, не показываем никакие уведомления
+    // Показываем реальные ошибки от сервера
+    toast.error(getErrorMessage(e))
   }
 }
 
@@ -353,7 +354,8 @@ const signContract = async () => {
       return
     }
 
-    // Остальные ошибки - просто игнорируем, не показываем никакие уведомления
+    // Показываем реальные ошибки от сервера
+    toast.error(getErrorMessage(e))
   }
 }
 
