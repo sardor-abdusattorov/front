@@ -239,11 +239,9 @@ export const useEimzo = () => {
           return null
         }
 
-        // Сохраняем status и reason для обработки в UI
-        const error: any = new Error(loadErr.reason || loadErr.message || 'Ошибка при загрузке ключа')
-        error.status = loadErr.status
-        error.reason = loadErr.reason
-        throw error
+        // Любая другая ошибка при загрузке ключа - просто возвращаем null
+        // Не показываем alert, чтобы не пугать пользователя
+        return null
       }
 
       if (!loadedKey?.id) {
