@@ -141,7 +141,28 @@
                   class="mb-4"
                 >
                   <template #item="{ item, props }">
-                    <v-list-item v-bind="props" :title="getCertificateTitle(item.raw)" />
+                    <v-list-item
+                      v-bind="props"
+                      class="cert-list-item"
+                      :class="{ 'expired': getKeyStatus(item.raw) === 'expired' }"
+                    >
+                      <div class="cert-card">
+                        <div class="cert-name">{{ item.raw.CN || item.raw.O }}</div>
+                        <div class="cert-row">
+                          <v-chip size="x-small" color="primary" variant="flat">Yuridik shaxs</v-chip>
+                          <span class="cert-label">STIR: <strong>{{ item.raw.TIN }}</strong></span>
+                        </div>
+                        <div class="cert-row">
+                          <span class="cert-label">Tashkilot:</span>
+                          <span class="cert-value">{{ item.raw.O }}</span>
+                        </div>
+                        <div class="cert-row">
+                          <span class="cert-label">Sertifikat raqami: <strong>{{ item.raw.serialNumber || '-' }}</strong></span>
+                          <span class="cert-divider">|</span>
+                          <span class="cert-label">Sertifikatning amal qilish muddati: <strong>{{ formatKeyDate(item.raw.validFrom) }} - {{ formatKeyDate(item.raw.validTo) }}</strong></span>
+                        </div>
+                      </div>
+                    </v-list-item>
                   </template>
                   <template #selection="{ item }">
                     <span>{{ getCertificateTitle(item.raw) }}</span>
@@ -487,5 +508,69 @@ defineExpose({
     background: rgba(255, 255, 255, 0.3);
     cursor: not-allowed;
   }
+}
+
+// Стили для карточек сертификатов как в OneID
+.cert-list-item {
+  min-height: auto !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #e0e0e0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.expired {
+    .cert-name,
+    .cert-label,
+    .cert-value {
+      color: #f44336 !important;
+    }
+  }
+
+  :deep(.v-list-item__content) {
+    padding: 0 !important;
+  }
+}
+
+.cert-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cert-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 4px;
+}
+
+.cert-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.cert-label {
+  color: #666;
+
+  strong {
+    color: #333;
+    font-weight: 600;
+  }
+}
+
+.cert-value {
+  color: #333;
+  font-weight: 500;
+}
+
+.cert-divider {
+  color: #999;
+  margin: 0 4px;
 }
 </style>
