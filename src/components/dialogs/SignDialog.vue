@@ -166,7 +166,10 @@
                       </div>
                     </div>
 
-                    <!-- Выпадающий список -->
+                  </div>
+
+                  <!-- Выпадающий список через Teleport -->
+                  <Teleport to="body">
                     <transition name="dropdown" @after-enter="scrollToSelected">
                       <div
                         v-if="isDropdownOpen"
@@ -203,8 +206,7 @@
                         </div>
                       </div>
                     </transition>
-                  </div>
-                </div>
+                  </Teleport>
 
                 <!-- Предупреждение о просроченном сертификате -->
                 <v-alert
