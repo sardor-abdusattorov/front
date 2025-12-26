@@ -385,11 +385,8 @@ const fetchContractSign = async (contractId: number) => {
       )
     }
 
-    // Автоматически выбираем первый действующий ключ, если он есть
-    if (correctEKeys.value.length > 0) {
-      const validKey = correctEKeys.value.find(key => isKeyValid(key))
-      selectedEKey.value = validKey || correctEKeys.value[0]
-    }
+    // Сбрасываем выбор, чтобы пользователь сам выбрал ключ
+    selectedEKey.value = undefined
 
     signData.value = result
   } catch (e) {
