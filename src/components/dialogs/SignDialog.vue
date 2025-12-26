@@ -130,20 +130,51 @@
           <!-- Вкладка файл ключа -->
           <v-window-item value="file">
             <v-card variant="outlined" class="pa-4">
-              <div v-if="correctEKey">
-                <div class="mb-4 text-sm">
-                  <div class="mb-2">
-                    <span class="text-grey">{{ t('contracts.organization') }}:</span>
-                    <span class="font-weight-bold ml-2">{{ correctEKey?.O }}</span>
-                  </div>
-                  <div>
-                    <span class="text-grey">{{ t('user.inn') }}:</span>
-                    <span class="font-weight-bold ml-2">{{ correctEKey?.TIN }}</span>
-                  </div>
+              <div v-if="correctEKeys.length > 0">
+                <!-- Список сертификатов -->
+                <div class="mb-4">
+                  <div class="text-body-2 text-grey mb-3">Выберите сертификат:</div>
+                  <v-radio-group v-model="selectedEKey" hide-details>
+                    <v-card
+                      v-for="(key, index) in correctEKeys"
+                      :key="index"
+                      :class="['key-item mb-3', { 'key-item-selected': selectedEKey === key, 'key-item-expired': !isKeyValid(key) }]"
+                      variant="outlined"
+                      @click="selectedEKey = key"
+                    >
+                      <v-card-text class="pa-3">
+                        <div class="d-flex align-center">
+                          <v-radio :value="key" hide-details class="mr-3"></v-radio>
+                          <div class="flex-grow-1">
+                            <div class="d-flex align-center mb-1">
+                              <span class="font-weight-bold">{{ key.O || 'Организация' }}</span>
+                              <v-chip
+                                :color="getKeyStatus(key).color"
+                                size="small"
+                                class="ml-2"
+                                variant="flat"
+                              >
+                                {{ getKeyStatus(key).text }}
+                              </v-chip>
+                            </div>
+                            <div class="text-sm text-grey">
+                              <div>ИНН: {{ key.TIN }}</div>
+                              <div>Владелец: {{ key.CN }}</div>
+                              <div class="d-flex align-center">
+                                <span>Срок действия:</span>
+                                <span class="ml-1">{{ formatDate(key.validFrom) }} - {{ formatDate(key.validTo) }}</span>
+                              </div>
+                              <div v-if="key.diskAlias" class="text-caption">{{ key.diskAlias }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                  </v-radio-group>
                 </div>
 
                 <div class="d-flex justify-end">
-                  <base-button @click="signContract" :disabled="isSigningBlocked">
+                  <base-button @click="signContract" :disabled="isSigningBlocked || !selectedEKey">
                     {{ t('contract.menu.sign') }}
                   </base-button>
                 </div>
@@ -177,7 +208,8 @@ const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
 const isModalOpen = ref(false)
 
-const correctEKey = ref<ESignKey>()
+const correctEKeys = ref<ESignKey[]>([])
+const selectedEKey = ref<ESignKey>()
 const expectedTIN = ref<string>('')
 const availableKeys = computed(() => eKeys.value.map((k: ESignKey) => k.TIN).join(', '))
 
@@ -208,6 +240,43 @@ const closeDialog = () => {
   clearError()
 }
 
+// Проверка срока действия сертификата
+const isKeyValid = (key: ESignKey): boolean => {
+  if (!key.validTo) return true // Если нет даты - считаем валидным
+
+  const validToDate = new Date(key.validTo)
+  const now = new Date()
+  return validToDate > now
+}
+
+// Форматирование даты для отображения
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '-'
+
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  } catch {
+    return '-'
+  }
+}
+
+// Получение статуса ключа
+const getKeyStatus = (key: ESignKey): { text: string; color: string } => {
+  if (!key.validTo) {
+    return { text: 'Неизвестно', color: 'grey' }
+  }
+
+  const valid = isKeyValid(key)
+  return valid
+    ? { text: 'Действителен', color: 'success' }
+    : { text: 'Просрочен', color: 'error' }
+}
+
 const openModal = async (contractId: number) => {
   // Сбрасываем ошибки при открытии
   clearError()
@@ -234,16 +303,24 @@ const fetchContractSign = async (contractId: number) => {
       expectedTIN.value = result?.contractEDSInfoModel?.firstOrgModel?.tin
       const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
 
-      correctEKey.value = eKeys.value.find(
+      // Находим ВСЕ ключи с нужным TIN
+      correctEKeys.value = eKeys.value.filter(
         (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
       )
     } else if (result.contractEDSInfoModel.secondOrgModel.id === userStore.user?.organizationId) {
       expectedTIN.value = result?.contractEDSInfoModel?.secondOrgModel?.tin
       const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
 
-      correctEKey.value = eKeys.value.find(
+      // Находим ВСЕ ключи с нужным TIN
+      correctEKeys.value = eKeys.value.filter(
         (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
       )
+    }
+
+    // Автоматически выбираем первый действующий ключ, если он есть
+    if (correctEKeys.value.length > 0) {
+      const validKey = correctEKeys.value.find(key => isKeyValid(key))
+      selectedEKey.value = validKey || correctEKeys.value[0]
     }
 
     signData.value = result
@@ -304,17 +381,17 @@ const signContractWithToken = async () => {
 
 // Подписание через файл ключа
 const signContract = async () => {
-  if (!correctEKey.value || !signData.value) return
+  if (!selectedEKey.value || !signData.value) return
 
   try {
-    const myHash = await getHashESign(correctEKey.value, signData.value.signToHash)
+    const myHash = await getHashESign(selectedEKey.value, signData.value.signToHash)
 
     // Если вернулся null - пользователь отменил операцию, просто выходим
     if (!myHash) {
       return
     }
 
-    const pairs = correctEKey.value.alias.split(',')
+    const pairs = selectedEKey.value.alias.split(',')
     const result: any = {}
 
     if (!myHash.hash) {
@@ -329,8 +406,8 @@ const signContract = async () => {
     let model = {
       contractId: signData.value.contractEDSInfoModel.id,
       signToHash: myHash?.hash,
-      organizationName: correctEKey.value.O,
-      fullName: correctEKey.value.CN,
+      organizationName: selectedEKey.value.O,
+      fullName: selectedEKey.value.CN,
       address: `${result.st ? result.st : ''}, ${result.l ? result.l : ''}`
     }
 
@@ -374,6 +451,32 @@ defineExpose({
   li {
     padding: 4px 0;
     min-height: 1.5em;
+  }
+}
+
+// Стили для элементов списка сертификатов
+.key-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+
+  &:hover {
+    border-color: rgba(var(--v-theme-primary), 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &-selected {
+    border-color: rgb(var(--v-theme-primary));
+    background-color: rgba(var(--v-theme-primary), 0.05);
+  }
+
+  &-expired {
+    opacity: 0.7;
+    background-color: rgba(var(--v-theme-error), 0.03);
+
+    &:hover {
+      border-color: rgba(var(--v-theme-error), 0.3);
+    }
   }
 }
 
