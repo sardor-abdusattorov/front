@@ -35,21 +35,10 @@
             <div class="font-weight-bold">{{ t('old_eimzo_version') }}</div>
             <div class="text-sm">{{ t('old_eimzo_version_desc') }} (текущая версия: {{ versionInfo.version }})</div>
             <div class="d-flex ga-2 mt-2">
-              <v-btn
-                color="primary"
-                size="small"
-                variant="elevated"
-                href="https://e-imzo.soliq.uz/"
-                target="_blank"
-              >
+              <v-btn color="primary" size="small" variant="elevated" href="https://e-imzo.soliq.uz/" target="_blank">
                 {{ t('download_eimzo') }}
               </v-btn>
-              <v-btn
-                color="grey"
-                size="small"
-                variant="text"
-                @click="showVersionWarning = false"
-              >
+              <v-btn color="grey" size="small" variant="text" @click="showVersionWarning = false">
                 {{ t('continue_anyway') }}
               </v-btn>
             </div>
@@ -59,8 +48,12 @@
         <!-- Информация о контракте -->
         <div class="mb-4">
           <div class="d-flex justify-space-between mb-3">
-            <div><strong>{{ t('contractDate') }}:</strong> {{ signData?.contractEDSInfoModel?.endContractDate }}</div>
-            <div><strong>{{ t('commission') }}:</strong> {{ signData?.contractEDSInfoModel?.percent }}</div>
+            <div>
+              <strong>{{ t('contractDate') }}:</strong> {{ signData?.contractEDSInfoModel?.endContractDate }}
+            </div>
+            <div>
+              <strong>{{ t('commission') }}:</strong> {{ signData?.contractEDSInfoModel?.percent }}
+            </div>
           </div>
 
           <v-row dense>
@@ -100,142 +93,153 @@
             <v-tab value="file">{{ t('sign_with_file') }}</v-tab>
           </v-tabs>
 
-        <v-window v-model="tab" :touch="false" class="no-transition">
-          <!-- Вкладка USB токен -->
-          <v-window-item value="token">
-            <v-card variant="outlined" class="pa-4">
-              <base-select
-                v-model="selectedUsbDevice"
-                :label="t('select_usb_device')"
-                :items="usbDevices"
-                item-title="name"
-                item-value="name"
-                :placeholder="usbDevices.length === 0 ? t('no_usb_devices') : t('select_usb_device')"
-                :disabled="usbDevices.length === 0 || isSigningBlocked"
-                class="mb-4"
-              >
-                <template v-if="usbDevices.length === 0" #append>
-                  <v-icon color="warning">mdi-alert-circle-outline</v-icon>
-                </template>
-              </base-select>
-
-              <div class="d-flex justify-end">
-                <base-button @click="signContractWithToken" :disabled="!selectedUsbDevice || isSigningBlocked">
-                  {{ t('contract.menu.sign') }}
-                </base-button>
-              </div>
-            </v-card>
-          </v-window-item>
-
-          <!-- Вкладка файл ключа -->
-          <v-window-item value="file">
-            <v-card variant="outlined" class="pa-4">
-              <div v-if="correctEKeys.length > 0">
-                <!-- Кастомный select для выбора сертификата -->
-                <div class="mb-4">
-                  <div class="certificate-select" v-click-outside="closeDropdown">
-                    <div
-                      ref="triggerRef"
-                      @click="toggleDropdown"
-                      :class="['certificate-select__trigger', { 'is-open': isDropdownOpen, 'is-expired': selectedEKey && !isKeyValid(selectedEKey) }]"
-                    >
-                      <div v-if="selectedEKey" class="certificate-select__selected">
-                        <div class="d-flex align-center justify-space-between flex-grow-1">
-                          <div class="flex-grow-1 certificate-select__content">
-                            <div class="d-flex align-center mb-1">
-                              <span class="font-weight-bold certificate-select__org-name">{{ selectedEKey.O || 'Организация' }}</span>
-                              <v-chip
-                                :color="getKeyStatus(selectedEKey).color"
-                                size="x-small"
-                                class="ml-2 certificate-select__chip"
-                                variant="flat"
-                              >
-                                {{ t(getKeyStatus(selectedEKey).translationKey) }}
-                              </v-chip>
-                            </div>
-                            <div class="text-caption text-grey certificate-select__details">
-                              {{ t('user.inn') }}: {{ selectedEKey.TIN }} | {{ t('certificate_owner') }}: {{ selectedEKey.CN }}
-                            </div>
-                          </div>
-                          <v-icon class="certificate-select__icon">{{ isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                        </div>
-                      </div>
-                      <div v-else class="certificate-select__placeholder">
-                        {{ t('select_certificate') }}
-                        <v-icon>{{ isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  <!-- Выпадающий список через Teleport -->
-                  <Teleport to="body">
-                    <transition name="dropdown" @after-enter="scrollToSelected">
-                      <div
-                        v-if="isDropdownOpen"
-                        ref="dropdownRef"
-                        class="certificate-select__dropdown"
-                        :style="dropdownStyle"
-                      >
-                        <div
-                          v-for="(key, index) in correctEKeys"
-                          :key="index"
-                          :ref="el => { if (selectedEKey === key) selectedOptionRef = el }"
-                          :class="['certificate-select__option', {
-                            'is-selected': selectedEKey === key,
-                            'is-expired': !isKeyValid(key)
-                          }]"
-                          @click.stop="selectKey(key)"
-                        >
-                          <div class="d-flex align-center mb-1">
-                            <span class="font-weight-bold">{{ key.O || 'Организация' }}</span>
-                            <v-chip
-                              :color="getKeyStatus(key).color"
-                              size="x-small"
-                              class="ml-2"
-                              variant="flat"
-                            >
-                              {{ t(getKeyStatus(key).translationKey) }}
-                            </v-chip>
-                          </div>
-                          <div class="text-caption">
-                            <div>{{ t('user.inn') }}: {{ key.TIN }}</div>
-                            <div>{{ t('certificate_owner') }}: {{ key.CN }}</div>
-                            <div>{{ t('valid_period') }}: {{ formatDate(key.validFrom) }} - {{ formatDate(key.validTo) }}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </transition>
-                  </Teleport>
-                </div>
-
-                <!-- Предупреждение о просроченном сертификате -->
-                <v-alert
-                  v-if="selectedEKey && !isKeyValid(selectedEKey)"
-                  type="error"
-                  variant="tonal"
-                  density="compact"
+          <v-window v-model="tab" :touch="false" class="no-transition">
+            <!-- Вкладка USB токен -->
+            <v-window-item value="token">
+              <v-card variant="outlined" class="pa-4">
+                <base-select
+                  v-model="selectedUsbDevice"
+                  :label="t('select_usb_device')"
+                  :items="usbDevices"
+                  item-title="name"
+                  item-value="name"
+                  :placeholder="usbDevices.length === 0 ? t('no_usb_devices') : t('select_usb_device')"
+                  :disabled="usbDevices.length === 0 || isSigningBlocked"
                   class="mb-4"
                 >
-                  {{ t('certificate_expired_warning') }}
-                </v-alert>
+                  <template v-if="usbDevices.length === 0" #append>
+                    <v-icon color="warning">mdi-alert-circle-outline</v-icon>
+                  </template>
+                </base-select>
 
                 <div class="d-flex justify-end">
-                  <base-button
-                    @click="signContract"
-                    :disabled="isSigningBlocked || !selectedEKey || (selectedEKey && !isKeyValid(selectedEKey))"
-                  >
+                  <base-button @click="signContractWithToken" :disabled="!selectedUsbDevice || isSigningBlocked">
                     {{ t('contract.menu.sign') }}
                   </base-button>
                 </div>
-              </div>
+              </v-card>
+            </v-window-item>
 
-              <v-alert v-else type="error" variant="tonal">
-                {{ t('youDontHaveTrueSignKey') }}
-              </v-alert>
-            </v-card>
-          </v-window-item>
-        </v-window>
+            <!-- Вкладка файл ключа -->
+            <v-window-item value="file">
+              <v-card variant="outlined" class="pa-4">
+                <div v-if="correctEKeys.length > 0">
+                  <!-- Кастомный select для выбора сертификата -->
+                  <div class="mb-4">
+                    <div class="certificate-select" v-click-outside="closeDropdown">
+                      <div
+                        ref="triggerRef"
+                        @click="toggleDropdown"
+                        :class="[
+                          'certificate-select__trigger',
+                          { 'is-open': isDropdownOpen, 'is-expired': selectedEKey && !isKeyValid(selectedEKey) }
+                        ]"
+                      >
+                        <div v-if="selectedEKey" class="certificate-select__selected">
+                          <div class="d-flex align-center justify-space-between flex-grow-1">
+                            <div class="flex-grow-1 certificate-select__content">
+                              <div class="d-flex align-center mb-1">
+                                <span class="font-weight-bold certificate-select__org-name">{{
+                                  selectedEKey.O || 'Организация'
+                                }}</span>
+                                <v-chip
+                                  :color="getKeyStatus(selectedEKey).color"
+                                  size="x-small"
+                                  class="ml-2 certificate-select__chip"
+                                  variant="flat"
+                                >
+                                  {{ t(getKeyStatus(selectedEKey).translationKey) }}
+                                </v-chip>
+                              </div>
+                              <div class="text-caption text-grey certificate-select__details">
+                                {{ t('user.inn') }}: {{ selectedEKey.TIN }} | {{ t('certificate_owner') }}:
+                                {{ selectedEKey.CN }}
+                              </div>
+                            </div>
+                            <v-icon class="certificate-select__icon">{{
+                              isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'
+                            }}</v-icon>
+                          </div>
+                        </div>
+                        <div v-else class="certificate-select__placeholder">
+                          {{ t('select_certificate') }}
+                          <v-icon>{{ isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Выпадающий список через Teleport -->
+                    <Teleport to="body">
+                      <transition name="dropdown" @after-enter="scrollToSelected">
+                        <div
+                          v-if="isDropdownOpen"
+                          ref="dropdownRef"
+                          class="certificate-select__dropdown"
+                          :style="dropdownStyle"
+                        >
+                          <div
+                            v-for="(key, index) in correctEKeys"
+                            :key="index"
+                            :ref="
+                              (el) => {
+                                if (selectedEKey === key) selectedOptionRef = el
+                              }
+                            "
+                            :class="[
+                              'certificate-select__option',
+                              {
+                                'is-selected': selectedEKey === key,
+                                'is-expired': !isKeyValid(key)
+                              }
+                            ]"
+                            @click.stop="selectKey(key)"
+                          >
+                            <div class="text-caption">
+                              <div>{{ t('user.inn') }}: {{ key.TIN }}</div>
+                              <div>{{ t('certificate_owner') }}: {{ key.CN }}</div>
+                              <div>
+                                {{ t('valid_period') }}: {{ formatDate(key.validFrom) }} - {{ formatDate(key.validTo) }}
+                              </div>
+                            </div>
+
+                            <div class="option-footer">
+                              <v-chip :color="getKeyStatus(key).color" size="x-small" variant="flat">
+                                {{ t(getKeyStatus(key).translationKey) }}
+                              </v-chip>
+                            </div>
+                          </div>
+                        </div>
+                      </transition>
+                    </Teleport>
+                  </div>
+
+                  <!-- Предупреждение о просроченном сертификате -->
+                  <v-alert
+                    v-if="selectedEKey && !isKeyValid(selectedEKey)"
+                    type="error"
+                    variant="tonal"
+                    density="compact"
+                    class="mb-4"
+                  >
+                    {{ t('certificate_expired_warning') }}
+                  </v-alert>
+
+                  <div class="d-flex justify-end">
+                    <base-button
+                      @click="signContract"
+                      :disabled="isSigningBlocked || !selectedEKey || (selectedEKey && !isKeyValid(selectedEKey))"
+                    >
+                      {{ t('contract.menu.sign') }}
+                    </base-button>
+                  </div>
+                </div>
+
+                <v-alert v-else type="error" variant="tonal">
+                  {{ t('youDontHaveTrueSignKey') }}
+                </v-alert>
+              </v-card>
+            </v-window-item>
+          </v-window>
         </div>
       </div>
     </v-card>
@@ -252,7 +256,16 @@ import { getErrorMessage } from '@/utils/functions'
 import { useUserStore } from '@/stores/user.store'
 import { GetContractSignResult } from '@/services/contracts/model/contracts.model'
 const { t } = useI18n()
-const { eKeys, getHashESign, signWithToken, isLoading: isEimzoLoading, error: eimzoError, usbDevices, versionInfo, clearError } = useEimzo()
+const {
+  eKeys,
+  getHashESign,
+  signWithToken,
+  isLoading: isEimzoLoading,
+  error: eimzoError,
+  usbDevices,
+  versionInfo,
+  clearError
+} = useEimzo()
 const userStore = useUserStore()
 const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
@@ -288,11 +301,15 @@ const isSigningBlocked = computed(() => {
 })
 
 // Автоматически выбираем первое устройство когда они загрузятся
-watch(usbDevices, (devices) => {
-  if (devices.length > 0 && !selectedUsbDevice.value) {
-    selectedUsbDevice.value = devices[0].name
-  }
-}, { immediate: true })
+watch(
+  usbDevices,
+  (devices) => {
+    if (devices.length > 0 && !selectedUsbDevice.value) {
+      selectedUsbDevice.value = devices[0].name
+    }
+  },
+  { immediate: true }
+)
 
 // Закрытие диалога
 const closeDialog = () => {
@@ -399,17 +416,13 @@ const fetchContractSign = async (contractId: number) => {
       const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
 
       // Находим ВСЕ ключи с нужным TIN
-      correctEKeys.value = eKeys.value.filter(
-        (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
-      )
+      correctEKeys.value = eKeys.value.filter((key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN)
     } else if (result.contractEDSInfoModel.secondOrgModel.id === userStore.user?.organizationId) {
       expectedTIN.value = result?.contractEDSInfoModel?.secondOrgModel?.tin
       const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
 
       // Находим ВСЕ ключи с нужным TIN
-      correctEKeys.value = eKeys.value.filter(
-        (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
-      )
+      correctEKeys.value = eKeys.value.filter((key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN)
     }
 
     // Сбрасываем выбор, чтобы пользователь сам выбрал ключ
@@ -434,9 +447,10 @@ const signContractWithToken = async () => {
     }
 
     // Для USB токена используем данные из контракта
-    const orgModel = signData.value.contractEDSInfoModel.firstOrgModel.id === userStore.user?.organizationId
-      ? signData.value.contractEDSInfoModel.firstOrgModel
-      : signData.value.contractEDSInfoModel.secondOrgModel
+    const orgModel =
+      signData.value.contractEDSInfoModel.firstOrgModel.id === userStore.user?.organizationId
+        ? signData.value.contractEDSInfoModel.firstOrgModel
+        : signData.value.contractEDSInfoModel.secondOrgModel
 
     let model = {
       contractId: signData.value.contractEDSInfoModel.id,
