@@ -130,20 +130,61 @@
           <!-- Вкладка файл ключа -->
           <v-window-item value="file">
             <v-card variant="outlined" class="pa-4">
-              <div v-if="correctEKey">
-                <div class="mb-4 text-sm">
+              <div v-if="availableEKeys.length > 0">
+                <!-- Список сертификатов для выбора -->
+                <div v-if="availableEKeys.length > 1" class="mb-4">
+                  <div class="text-sm text-grey mb-2">{{ t('select_certificate') || 'Выберите сертификат' }}:</div>
+                  <v-radio-group v-model="selectedEKey" hide-details>
+                    <v-card
+                      v-for="(key, index) in availableEKeys"
+                      :key="index"
+                      variant="outlined"
+                      class="mb-2 certificate-card"
+                      :class="{ 'selected': selectedEKey === key, 'expired': getKeyStatus(key) === 'expired' }"
+                    >
+                      <v-radio :value="key">
+                        <template #label>
+                          <div class="d-flex flex-column ga-1 py-2">
+                            <div class="d-flex align-center ga-2">
+                              <span class="font-weight-bold">{{ key.O }}</span>
+                              <v-chip
+                                size="x-small"
+                                :color="getKeyStatus(key) === 'active' ? 'success' : 'error'"
+                              >
+                                {{ getKeyStatus(key) === 'active' ? (t('active_cert') || 'Активный') : (t('expired_cert') || 'Истёк') }}
+                              </v-chip>
+                            </div>
+                            <div class="text-sm text-grey">
+                              {{ t('user.inn') }}: {{ key.TIN }}
+                            </div>
+                            <div class="text-sm text-grey">
+                              {{ t('cert_number') || 'Серийный номер' }}: {{ key.serialNumber || '-' }}
+                            </div>
+                            <div class="text-sm text-grey">
+                              {{ t('valid_from') || 'Действителен с' }}: {{ formatKeyDate(key.validFrom) }} -
+                              {{ formatKeyDate(key.validTo) }}
+                            </div>
+                          </div>
+                        </template>
+                      </v-radio>
+                    </v-card>
+                  </v-radio-group>
+                </div>
+
+                <!-- Информация о единственном сертификате -->
+                <div v-else class="mb-4 text-sm">
                   <div class="mb-2">
                     <span class="text-grey">{{ t('contracts.organization') }}:</span>
-                    <span class="font-weight-bold ml-2">{{ correctEKey?.O }}</span>
+                    <span class="font-weight-bold ml-2">{{ availableEKeys[0]?.O }}</span>
                   </div>
                   <div>
                     <span class="text-grey">{{ t('user.inn') }}:</span>
-                    <span class="font-weight-bold ml-2">{{ correctEKey?.TIN }}</span>
+                    <span class="font-weight-bold ml-2">{{ availableEKeys[0]?.TIN }}</span>
                   </div>
                 </div>
 
                 <div class="d-flex justify-end">
-                  <base-button @click="signContract" :disabled="isSigningBlocked">
+                  <base-button @click="signContract" :disabled="isSigningBlocked || !selectedEKey">
                     {{ t('contract.menu.sign') }}
                   </base-button>
                 </div>
@@ -177,7 +218,8 @@ const emit = defineEmits(['update'])
 const signData = ref<GetContractSignResult>()
 const isModalOpen = ref(false)
 
-const correctEKey = ref<ESignKey>()
+const availableEKeys = ref<ESignKey[]>([])
+const selectedEKey = ref<ESignKey>()
 const expectedTIN = ref<string>('')
 const availableKeys = computed(() => eKeys.value.map((k: ESignKey) => k.TIN).join(', '))
 
@@ -215,6 +257,52 @@ const openModal = async (contractId: number) => {
   isModalOpen.value = true
 }
 
+// Функция для парсинга даты из сертификата
+const parseKeyDate = (dateStr: string): Date | null => {
+  try {
+    if (!dateStr) return null
+    // Формат даты в ключе: "DD.MM.YYYY HH:mm:ss" или "DD.MM.YYYY"
+    const parts = dateStr.split(' ')[0].split('.')
+    if (parts.length !== 3) return null
+
+    const day = parseInt(parts[0])
+    const month = parseInt(parts[1]) - 1 // месяцы в JS начинаются с 0
+    const year = parseInt(parts[2])
+
+    return new Date(year, month, day)
+  } catch (e) {
+    return null
+  }
+}
+
+// Проверка валидности ключа
+const isKeyValid = (key: ESignKey): boolean => {
+  if (!key.validTo) return true // если нет даты окончания, считаем валидным
+
+  const validTo = parseKeyDate(key.validTo)
+  if (!validTo) return true
+
+  const now = new Date()
+  return validTo > now
+}
+
+// Получение статуса ключа
+const getKeyStatus = (key: ESignKey): 'active' | 'expired' => {
+  return isKeyValid(key) ? 'active' : 'expired'
+}
+
+// Форматирование даты для отображения
+const formatKeyDate = (dateStr: string): string => {
+  const date = parseKeyDate(dateStr)
+  if (!date) return dateStr
+
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const year = date.getFullYear()
+
+  return `${day}.${month}.${year}`
+}
+
 const fetchContractSign = async (contractId: number) => {
   try {
     const {
@@ -234,16 +322,24 @@ const fetchContractSign = async (contractId: number) => {
       expectedTIN.value = result?.contractEDSInfoModel?.firstOrgModel?.tin
       const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
 
-      correctEKey.value = eKeys.value.find(
+      // Находим ВСЕ ключи с нужным TIN
+      availableEKeys.value = eKeys.value.filter(
         (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
       )
+
+      // Автоматически выбираем первый валидный ключ
+      selectedEKey.value = availableEKeys.value.find(isKeyValid) || availableEKeys.value[0]
     } else if (result.contractEDSInfoModel.secondOrgModel.id === userStore.user?.organizationId) {
       expectedTIN.value = result?.contractEDSInfoModel?.secondOrgModel?.tin
       const normalizedExpectedTIN = normalizeTIN(expectedTIN.value)
 
-      correctEKey.value = eKeys.value.find(
+      // Находим ВСЕ ключи с нужным TIN
+      availableEKeys.value = eKeys.value.filter(
         (key: ESignKey) => normalizeTIN(key.TIN) === normalizedExpectedTIN
       )
+
+      // Автоматически выбираем первый валидный ключ
+      selectedEKey.value = availableEKeys.value.find(isKeyValid) || availableEKeys.value[0]
     }
 
     signData.value = result
@@ -304,17 +400,17 @@ const signContractWithToken = async () => {
 
 // Подписание через файл ключа
 const signContract = async () => {
-  if (!correctEKey.value || !signData.value) return
+  if (!selectedEKey.value || !signData.value) return
 
   try {
-    const myHash = await getHashESign(correctEKey.value, signData.value.signToHash)
+    const myHash = await getHashESign(selectedEKey.value, signData.value.signToHash)
 
     // Если вернулся null - пользователь отменил операцию, просто выходим
     if (!myHash) {
       return
     }
 
-    const pairs = correctEKey.value.alias.split(',')
+    const pairs = selectedEKey.value.alias.split(',')
     const result: any = {}
 
     if (!myHash.hash) {
@@ -329,8 +425,8 @@ const signContract = async () => {
     let model = {
       contractId: signData.value.contractEDSInfoModel.id,
       signToHash: myHash?.hash,
-      organizationName: correctEKey.value.O,
-      fullName: correctEKey.value.CN,
+      organizationName: selectedEKey.value.O,
+      fullName: selectedEKey.value.CN,
       address: `${result.st ? result.st : ''}, ${result.l ? result.l : ''}`
     }
 
@@ -401,6 +497,40 @@ defineExpose({
     bottom: 0;
     background: rgba(255, 255, 255, 0.3);
     cursor: not-allowed;
+  }
+}
+
+// Стили для карточек сертификатов
+.certificate-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: rgb(var(--v-theme-primary));
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: rgb(var(--v-theme-primary));
+    border-width: 2px;
+    background-color: rgba(var(--v-theme-primary), 0.05);
+  }
+
+  &.expired {
+    opacity: 0.7;
+
+    &:hover {
+      border-color: rgb(var(--v-theme-error));
+    }
+  }
+
+  :deep(.v-radio) {
+    width: 100%;
+  }
+
+  :deep(.v-label) {
+    width: 100%;
+    opacity: 1 !important;
   }
 }
 </style>
