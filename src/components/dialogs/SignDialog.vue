@@ -145,20 +145,40 @@
                       class="cert-list-item"
                       :class="{ 'expired': getKeyStatus(item.raw) === 'expired' }"
                     >
+                      <template #prepend>
+                        <v-avatar
+                          :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'"
+                          size="40"
+                          class="cert-avatar"
+                        >
+                          <v-icon color="white" size="20">
+                            {{ getKeyStatus(item.raw) === 'active' ? 'mdi-certificate' : 'mdi-certificate-outline' }}
+                          </v-icon>
+                        </v-avatar>
+                      </template>
                       <div class="cert-card">
                         <div class="cert-name">{{ item.raw.CN || item.raw.O }}</div>
                         <div class="cert-row">
-                          <v-chip size="x-small" color="primary" variant="flat">Yuridik shaxs</v-chip>
+                          <v-chip size="small" color="primary" variant="flat" class="cert-chip">
+                            <v-icon start size="14">mdi-briefcase</v-icon>
+                            Yuridik shaxs
+                          </v-chip>
                           <span class="cert-label">STIR: <strong>{{ item.raw.TIN }}</strong></span>
                         </div>
                         <div class="cert-row">
-                          <span class="cert-label">Tashkilot:</span>
+                          <v-icon size="14" color="grey">mdi-domain</v-icon>
                           <span class="cert-value">{{ item.raw.O }}</span>
                         </div>
-                        <div class="cert-row">
-                          <span class="cert-label">Sertifikat raqami: <strong>{{ item.raw.serialNumber || '-' }}</strong></span>
-                          <span class="cert-divider">|</span>
-                          <span class="cert-label">Sertifikatning amal qilish muddati: <strong>{{ formatKeyDate(item.raw.validFrom) }} - {{ formatKeyDate(item.raw.validTo) }}</strong></span>
+                        <div class="cert-row cert-info">
+                          <div class="cert-info-item">
+                            <v-icon size="14" color="grey">mdi-identifier</v-icon>
+                            <span class="cert-label">{{ item.raw.serialNumber || '-' }}</span>
+                          </div>
+                          <span class="cert-divider">•</span>
+                          <div class="cert-info-item">
+                            <v-icon size="14" color="grey">mdi-calendar-range</v-icon>
+                            <span class="cert-label">{{ formatKeyDate(item.raw.validFrom) }} - {{ formatKeyDate(item.raw.validTo) }}</span>
+                          </div>
                         </div>
                       </div>
                     </v-list-item>
@@ -512,38 +532,59 @@ defineExpose({
 // Стили для карточек сертификатов как в OneID
 .cert-list-item {
   min-height: auto !important;
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 16px !important;
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f9fafb !important;
+  }
 
   &:last-child {
     border-bottom: none;
   }
 
   &.expired {
-    .cert-name,
+    background-color: #fef2f2;
+
+    .cert-name {
+      color: #dc2626 !important;
+    }
+
     .cert-label,
     .cert-value {
-      color: #f44336 !important;
+      color: #991b1b !important;
     }
   }
 
   :deep(.v-list-item__content) {
     padding: 0 !important;
   }
+
+  :deep(.v-list-item__prepend) {
+    align-self: flex-start;
+    padding-top: 4px;
+  }
+}
+
+.cert-avatar {
+  margin-right: 12px;
 }
 
 .cert-card {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .cert-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1976d2;
-  margin-bottom: 4px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e40af;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 .cert-row {
@@ -554,22 +595,44 @@ defineExpose({
   flex-wrap: wrap;
 }
 
+.cert-chip {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 .cert-label {
-  color: #666;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 
   strong {
-    color: #333;
+    color: #1f2937;
     font-weight: 600;
   }
 }
 
 .cert-value {
-  color: #333;
+  color: #374151;
   font-weight: 500;
 }
 
+.cert-info {
+  background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.cert-info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .cert-divider {
-  color: #999;
-  margin: 0 4px;
+  color: #d1d5db;
+  margin: 0 8px;
+  font-weight: bold;
 }
 </style>
