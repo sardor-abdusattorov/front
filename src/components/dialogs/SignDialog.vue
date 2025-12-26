@@ -169,13 +169,14 @@
                   </template>
                   <template #selection="{ item }">
                     <div class="d-flex align-center ga-2">
-                      <span>{{ item.raw.O }}</span>
+                      <span>{{ item.raw.serialNumber || '-' }}</span>
                       <v-chip
                         size="x-small"
                         :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'"
                       >
                         {{ getKeyStatus(item.raw) === 'active' ? t('active_cert') : t('expired_cert') }}
                       </v-chip>
+                      <span class="text-caption">до {{ formatKeyDate(item.raw.validTo) }}</span>
                     </div>
                   </template>
                 </base-select>
@@ -318,7 +319,10 @@ const formatKeyDate = (dateStr: string): string => {
 
 // Функция для получения названия сертификата в select
 const getCertificateTitle = (key: ESignKey): string => {
-  return key.O || key.CN || 'Сертификат'
+  const serial = key.serialNumber || '-'
+  const validTo = formatKeyDate(key.validTo)
+  const status = isKeyValid(key) ? t('active_cert') : t('expired_cert')
+  return `${serial} (${status}, до ${validTo})`
 }
 
 const fetchContractSign = async (contractId: number) => {
