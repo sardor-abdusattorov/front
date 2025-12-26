@@ -133,8 +133,12 @@
               <div v-if="correctEKeys.length > 0">
                 <!-- Кастомный select для выбора сертификата -->
                 <div class="mb-4">
-                  <div class="certificate-select" @click="toggleDropdown" v-click-outside="closeDropdown">
-                    <div :class="['certificate-select__trigger', { 'is-open': isDropdownOpen, 'is-expired': selectedEKey && !isKeyValid(selectedEKey) }]">
+                  <div class="certificate-select" v-click-outside="closeDropdown">
+                    <div
+                      ref="triggerRef"
+                      @click="toggleDropdown"
+                      :class="['certificate-select__trigger', { 'is-open': isDropdownOpen, 'is-expired': selectedEKey && !isKeyValid(selectedEKey) }]"
+                    >
                       <div v-if="selectedEKey" class="certificate-select__selected">
                         <div class="d-flex align-center justify-space-between flex-grow-1">
                           <div class="flex-grow-1 certificate-select__content">
@@ -164,7 +168,12 @@
 
                     <!-- Выпадающий список -->
                     <transition name="dropdown" @after-enter="scrollToSelected">
-                      <div v-if="isDropdownOpen" ref="dropdownRef" class="certificate-select__dropdown">
+                      <div
+                        v-if="isDropdownOpen"
+                        ref="dropdownRef"
+                        class="certificate-select__dropdown"
+                        :style="dropdownStyle"
+                      >
                         <div
                           v-for="(key, index) in correctEKeys"
                           :key="index"
@@ -263,6 +272,12 @@ const showVersionWarning = ref(true)
 const isDropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const selectedOptionRef = ref<HTMLElement | null>(null)
+const triggerRef = ref<HTMLElement | null>(null)
+const dropdownStyle = ref({
+  top: '0px',
+  left: '0px',
+  width: '0px'
+})
 
 // Блокировать подписание пока показывается предупреждение о версии
 const isSigningBlocked = computed(() => {
@@ -322,6 +337,15 @@ const getKeyStatus = (key: ESignKey): { text: string; color: string; translation
 
 // Управление dropdown
 const toggleDropdown = () => {
+  if (!isDropdownOpen.value && triggerRef.value) {
+    // Вычисляем позицию trigger элемента
+    const rect = triggerRef.value.getBoundingClientRect()
+    dropdownStyle.value = {
+      top: `${rect.bottom + 4}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`
+    }
+  }
   isDropdownOpen.value = !isDropdownOpen.value
 }
 
@@ -591,15 +615,12 @@ defineExpose({
   }
 
   &__dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
+    position: fixed;
     background: white;
     border: 1px solid #ccc;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 9999;
     max-height: 400px;
     overflow-y: auto;
 
