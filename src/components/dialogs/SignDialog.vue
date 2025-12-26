@@ -139,47 +139,7 @@
                   :item-title="getCertificateTitle"
                   return-object
                   class="mb-4"
-                >
-                  <template #item="{ item, props }">
-                    <v-list-item v-bind="props" class="certificate-item">
-                      <template #prepend>
-                        <v-icon :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'">
-                          {{ getKeyStatus(item.raw) === 'active' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-                        </v-icon>
-                      </template>
-                      <v-list-item-title>
-                        <div class="d-flex align-center ga-2">
-                          <span class="font-weight-medium">{{ item.raw.O }}</span>
-                          <v-chip
-                            size="x-small"
-                            :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'"
-                          >
-                            {{ getKeyStatus(item.raw) === 'active' ? t('active_cert') : t('expired_cert') }}
-                          </v-chip>
-                        </div>
-                      </v-list-item-title>
-                      <v-list-item-subtitle>
-                        <div class="text-caption">
-                          <div>{{ t('user.inn') }}: {{ item.raw.TIN }}</div>
-                          <div>{{ t('cert_serial') }}: {{ item.raw.serialNumber || '-' }}</div>
-                          <div>{{ t('cert_valid_period') }}: {{ formatKeyDate(item.raw.validFrom) }} - {{ formatKeyDate(item.raw.validTo) }}</div>
-                        </div>
-                      </v-list-item-subtitle>
-                    </v-list-item>
-                  </template>
-                  <template #selection="{ item }">
-                    <div class="d-flex align-center ga-2">
-                      <span>{{ item.raw.serialNumber || '-' }}</span>
-                      <v-chip
-                        size="x-small"
-                        :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'"
-                      >
-                        {{ getKeyStatus(item.raw) === 'active' ? t('active_cert') : t('expired_cert') }}
-                      </v-chip>
-                      <span class="text-caption">до {{ formatKeyDate(item.raw.validTo) }}</span>
-                    </div>
-                  </template>
-                </base-select>
+                />
 
                 <div class="d-flex justify-end">
                   <base-button @click="signContract" :disabled="isSigningBlocked || !selectedEKey">
@@ -320,8 +280,8 @@ const formatKeyDate = (dateStr: string): string => {
 // Функция для получения названия сертификата в select
 const getCertificateTitle = (key: ESignKey): string => {
   const serial = key.serialNumber || '-'
-  const validTo = formatKeyDate(key.validTo)
   const status = isKeyValid(key) ? t('active_cert') : t('expired_cert')
+  const validTo = formatKeyDate(key.validTo)
   return `${serial} (${status}, до ${validTo})`
 }
 
@@ -519,15 +479,6 @@ defineExpose({
     bottom: 0;
     background: rgba(255, 255, 255, 0.3);
     cursor: not-allowed;
-  }
-}
-
-// Стили для элементов списка сертификатов
-.certificate-item {
-  padding: 8px 16px;
-
-  :deep(.v-list-item-subtitle) {
-    margin-top: 4px;
   }
 }
 </style>
