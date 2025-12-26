@@ -131,57 +131,54 @@
           <v-window-item value="file">
             <v-card variant="outlined" class="pa-4">
               <div v-if="availableEKeys.length > 0">
-                <!-- Список сертификатов для выбора -->
-                <div v-if="availableEKeys.length > 1" class="mb-4">
-                  <div class="text-sm text-grey mb-2">{{ t('select_certificate') || 'Выберите сертификат' }}:</div>
-                  <v-radio-group v-model="selectedEKey" hide-details>
-                    <v-card
-                      v-for="(key, index) in availableEKeys"
-                      :key="index"
-                      variant="outlined"
-                      class="mb-2 certificate-card"
-                      :class="{ 'selected': selectedEKey === key, 'expired': getKeyStatus(key) === 'expired' }"
-                    >
-                      <v-radio :value="key">
-                        <template #label>
-                          <div class="d-flex flex-column ga-1 py-2">
-                            <div class="d-flex align-center ga-2">
-                              <span class="font-weight-bold">{{ key.O }}</span>
-                              <v-chip
-                                size="x-small"
-                                :color="getKeyStatus(key) === 'active' ? 'success' : 'error'"
-                              >
-                                {{ getKeyStatus(key) === 'active' ? (t('active_cert') || 'Активный') : (t('expired_cert') || 'Истёк') }}
-                              </v-chip>
-                            </div>
-                            <div class="text-sm text-grey">
-                              {{ t('user.inn') }}: {{ key.TIN }}
-                            </div>
-                            <div class="text-sm text-grey">
-                              {{ t('cert_number') || 'Серийный номер' }}: {{ key.serialNumber || '-' }}
-                            </div>
-                            <div class="text-sm text-grey">
-                              {{ t('valid_from') || 'Действителен с' }}: {{ formatKeyDate(key.validFrom) }} -
-                              {{ formatKeyDate(key.validTo) }}
-                            </div>
-                          </div>
-                        </template>
-                      </v-radio>
-                    </v-card>
-                  </v-radio-group>
-                </div>
-
-                <!-- Информация о единственном сертификате -->
-                <div v-else class="mb-4 text-sm">
-                  <div class="mb-2">
-                    <span class="text-grey">{{ t('contracts.organization') }}:</span>
-                    <span class="font-weight-bold ml-2">{{ availableEKeys[0]?.O }}</span>
-                  </div>
-                  <div>
-                    <span class="text-grey">{{ t('user.inn') }}:</span>
-                    <span class="font-weight-bold ml-2">{{ availableEKeys[0]?.TIN }}</span>
-                  </div>
-                </div>
+                <!-- Select для выбора сертификата -->
+                <base-select
+                  v-model="selectedEKey"
+                  :label="t('select_certificate')"
+                  :items="availableEKeys"
+                  :item-title="getCertificateTitle"
+                  return-object
+                  class="mb-4"
+                >
+                  <template #item="{ item, props }">
+                    <v-list-item v-bind="props" class="certificate-item">
+                      <template #prepend>
+                        <v-icon :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'">
+                          {{ getKeyStatus(item.raw) === 'active' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                        </v-icon>
+                      </template>
+                      <v-list-item-title>
+                        <div class="d-flex align-center ga-2">
+                          <span class="font-weight-medium">{{ item.raw.O }}</span>
+                          <v-chip
+                            size="x-small"
+                            :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'"
+                          >
+                            {{ getKeyStatus(item.raw) === 'active' ? t('active_cert') : t('expired_cert') }}
+                          </v-chip>
+                        </div>
+                      </v-list-item-title>
+                      <v-list-item-subtitle>
+                        <div class="text-caption">
+                          <div>{{ t('user.inn') }}: {{ item.raw.TIN }}</div>
+                          <div>{{ t('cert_serial') }}: {{ item.raw.serialNumber || '-' }}</div>
+                          <div>{{ t('cert_valid_period') }}: {{ formatKeyDate(item.raw.validFrom) }} - {{ formatKeyDate(item.raw.validTo) }}</div>
+                        </div>
+                      </v-list-item-subtitle>
+                    </v-list-item>
+                  </template>
+                  <template #selection="{ item }">
+                    <div class="d-flex align-center ga-2">
+                      <span>{{ item.raw.O }}</span>
+                      <v-chip
+                        size="x-small"
+                        :color="getKeyStatus(item.raw) === 'active' ? 'success' : 'error'"
+                      >
+                        {{ getKeyStatus(item.raw) === 'active' ? t('active_cert') : t('expired_cert') }}
+                      </v-chip>
+                    </div>
+                  </template>
+                </base-select>
 
                 <div class="d-flex justify-end">
                   <base-button @click="signContract" :disabled="isSigningBlocked || !selectedEKey">
@@ -261,15 +258,31 @@ const openModal = async (contractId: number) => {
 const parseKeyDate = (dateStr: string): Date | null => {
   try {
     if (!dateStr) return null
-    // Формат даты в ключе: "DD.MM.YYYY HH:mm:ss" или "DD.MM.YYYY"
-    const parts = dateStr.split(' ')[0].split('.')
-    if (parts.length !== 3) return null
 
-    const day = parseInt(parts[0])
-    const month = parseInt(parts[1]) - 1 // месяцы в JS начинаются с 0
-    const year = parseInt(parts[2])
+    // Удаляем GMT часть и берем только дату
+    // Формат: "Wed May 05 2021 11:46:51 GMT+0500 (Узбекистан, стандартное время)"
+    // или "DD.MM.YYYY"
+    let cleanDateStr = dateStr.trim()
 
-    return new Date(year, month, day)
+    // Если формат GMT
+    if (cleanDateStr.includes('GMT')) {
+      // Парсим стандартный формат Date
+      const date = new Date(cleanDateStr)
+      if (!isNaN(date.getTime())) {
+        return date
+      }
+    }
+
+    // Если формат DD.MM.YYYY
+    const parts = cleanDateStr.split(' ')[0].split('.')
+    if (parts.length === 3) {
+      const day = parseInt(parts[0])
+      const month = parseInt(parts[1]) - 1
+      const year = parseInt(parts[2])
+      return new Date(year, month, day)
+    }
+
+    return null
   } catch (e) {
     return null
   }
@@ -301,6 +314,11 @@ const formatKeyDate = (dateStr: string): string => {
   const year = date.getFullYear()
 
   return `${day}.${month}.${year}`
+}
+
+// Функция для получения названия сертификата в select
+const getCertificateTitle = (key: ESignKey): string => {
+  return key.O || key.CN || 'Сертификат'
 }
 
 const fetchContractSign = async (contractId: number) => {
@@ -500,37 +518,12 @@ defineExpose({
   }
 }
 
-// Стили для карточек сертификатов
-.certificate-card {
-  cursor: pointer;
-  transition: all 0.2s ease;
+// Стили для элементов списка сертификатов
+.certificate-item {
+  padding: 8px 16px;
 
-  &:hover {
-    border-color: rgb(var(--v-theme-primary));
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  &.selected {
-    border-color: rgb(var(--v-theme-primary));
-    border-width: 2px;
-    background-color: rgba(var(--v-theme-primary), 0.05);
-  }
-
-  &.expired {
-    opacity: 0.7;
-
-    &:hover {
-      border-color: rgb(var(--v-theme-error));
-    }
-  }
-
-  :deep(.v-radio) {
-    width: 100%;
-  }
-
-  :deep(.v-label) {
-    width: 100%;
-    opacity: 1 !important;
+  :deep(.v-list-item-subtitle) {
+    margin-top: 4px;
   }
 }
 </style>
