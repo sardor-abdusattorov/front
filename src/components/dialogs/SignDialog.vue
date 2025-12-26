@@ -136,7 +136,6 @@
                   v-model="selectedEKey"
                   :label="t('select_certificate')"
                   :items="availableEKeys"
-                  item-value="serialNumber"
                   return-object
                   class="mb-4"
                 >
