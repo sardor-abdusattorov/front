@@ -163,11 +163,12 @@
                     </div>
 
                     <!-- Выпадающий список -->
-                    <transition name="dropdown">
-                      <div v-if="isDropdownOpen" class="certificate-select__dropdown">
+                    <transition name="dropdown" @after-enter="scrollToSelected">
+                      <div v-if="isDropdownOpen" ref="dropdownRef" class="certificate-select__dropdown">
                         <div
                           v-for="(key, index) in correctEKeys"
                           :key="index"
+                          :ref="el => { if (selectedEKey === key) selectedOptionRef = el }"
                           :class="['certificate-select__option', {
                             'is-selected': selectedEKey === key,
                             'is-expired': !isKeyValid(key)
@@ -260,6 +261,8 @@ const showVersionWarning = ref(true)
 
 // Состояние dropdown для выбора сертификата
 const isDropdownOpen = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
+const selectedOptionRef = ref<HTMLElement | null>(null)
 
 // Блокировать подписание пока показывается предупреждение о версии
 const isSigningBlocked = computed(() => {
@@ -329,6 +332,16 @@ const closeDropdown = () => {
 const selectKey = (key: ESignKey) => {
   selectedEKey.value = key
   closeDropdown()
+}
+
+// Прокрутка к выбранному элементу при открытии dropdown
+const scrollToSelected = () => {
+  if (selectedOptionRef.value && dropdownRef.value) {
+    selectedOptionRef.value.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest'
+    })
+  }
 }
 
 const openModal = async (contractId: number) => {
@@ -590,7 +603,7 @@ defineExpose({
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
-    max-height: 200px;
+    max-height: 400px;
     overflow-y: auto;
 
     // Стилизация скроллбара
