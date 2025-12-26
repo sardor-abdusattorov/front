@@ -137,23 +137,23 @@
                     <div :class="['certificate-select__trigger', { 'is-open': isDropdownOpen, 'is-expired': selectedEKey && !isKeyValid(selectedEKey) }]">
                       <div v-if="selectedEKey" class="certificate-select__selected">
                         <div class="d-flex align-center justify-space-between flex-grow-1">
-                          <div class="flex-grow-1">
+                          <div class="flex-grow-1 certificate-select__content">
                             <div class="d-flex align-center mb-1">
-                              <span class="font-weight-bold">{{ selectedEKey.O || 'Организация' }}</span>
+                              <span class="font-weight-bold certificate-select__org-name">{{ selectedEKey.O || 'Организация' }}</span>
                               <v-chip
                                 :color="getKeyStatus(selectedEKey).color"
                                 size="x-small"
-                                class="ml-2"
+                                class="ml-2 certificate-select__chip"
                                 variant="flat"
                               >
                                 {{ t(getKeyStatus(selectedEKey).translationKey) }}
                               </v-chip>
                             </div>
-                            <div class="text-caption text-grey">
+                            <div class="text-caption text-grey certificate-select__details">
                               {{ t('user.inn') }}: {{ selectedEKey.TIN }} | {{ t('certificate_owner') }}: {{ selectedEKey.CN }}
                             </div>
                           </div>
-                          <v-icon>{{ isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                          <v-icon class="certificate-select__icon">{{ isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
                         </div>
                       </div>
                       <div v-else class="certificate-select__placeholder">
@@ -543,6 +543,35 @@ defineExpose({
     width: 100%;
   }
 
+  &__content {
+    min-width: 0; // Для правильной работы ellipsis
+  }
+
+  &__org-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    max-width: calc(100% - 80px); // Место для chip
+    vertical-align: middle;
+  }
+
+  &__details {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__chip {
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
   &__placeholder {
     color: #666;
     display: flex;
@@ -561,12 +590,31 @@ defineExpose({
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
-    max-height: 300px;
+    max-height: 200px;
     overflow-y: auto;
+
+    // Стилизация скроллбара
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 8px;
+
+      &:hover {
+        background: #555;
+      }
+    }
   }
 
   &__option {
-    padding: 12px 16px;
+    padding: 10px 12px;
     cursor: pointer;
     transition: background 0.2s ease;
     border-bottom: 1px solid #f0f0f0;
@@ -582,6 +630,7 @@ defineExpose({
     &.is-selected {
       background-color: rgba(var(--v-theme-primary), 0.1);
       border-left: 3px solid rgb(var(--v-theme-primary));
+      padding-left: 9px; // Компенсация для border-left
     }
 
     &.is-expired {
@@ -594,6 +643,26 @@ defineExpose({
 
       &:hover {
         background-color: rgba(var(--v-theme-error), 0.05);
+      }
+    }
+
+    // Улучшаем читаемость длинного текста
+    .font-weight-bold {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
+    .text-caption {
+      font-size: 0.75rem;
+      line-height: 1.3;
+
+      > div {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
   }

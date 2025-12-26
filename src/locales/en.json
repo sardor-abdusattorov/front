@@ -790,7 +790,7 @@
     "title": "Create account"
   },
   "chooseAKey": "Choose a key",
-  "select_certificate": "Select certificate",
+  "select_certificate": "Select digital signature",
   "certificate_valid": "Valid",
   "certificate_expired": "Expired",
   "certificate_unknown": "Unknown",
