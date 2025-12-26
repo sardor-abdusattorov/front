@@ -136,10 +136,17 @@
                   v-model="selectedEKey"
                   :label="t('select_certificate')"
                   :items="availableEKeys"
-                  :item-title="getCertificateTitle"
+                  item-value="serialNumber"
                   return-object
                   class="mb-4"
-                />
+                >
+                  <template #item="{ item, props }">
+                    <v-list-item v-bind="props" :title="getCertificateTitle(item.raw)" />
+                  </template>
+                  <template #selection="{ item }">
+                    <span>{{ getCertificateTitle(item.raw) }}</span>
+                  </template>
+                </base-select>
 
                 <div class="d-flex justify-end">
                   <base-button @click="signContract" :disabled="isSigningBlocked || !selectedEKey">
