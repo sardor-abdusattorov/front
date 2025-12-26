@@ -131,50 +131,87 @@
           <v-window-item value="file">
             <v-card variant="outlined" class="pa-4">
               <div v-if="correctEKeys.length > 0">
-                <!-- Список сертификатов -->
+                <!-- Кастомный select для выбора сертификата -->
                 <div class="mb-4">
-                  <div class="text-body-2 text-grey mb-3">Выберите сертификат:</div>
-                  <v-radio-group v-model="selectedEKey" hide-details>
-                    <v-card
-                      v-for="(key, index) in correctEKeys"
-                      :key="index"
-                      :class="['key-item mb-3', { 'key-item-selected': selectedEKey === key, 'key-item-expired': !isKeyValid(key) }]"
-                      variant="outlined"
-                      @click="selectedEKey = key"
-                    >
-                      <v-card-text class="pa-3">
-                        <div class="d-flex align-center">
-                          <v-radio :value="key" hide-details class="mr-3"></v-radio>
+                  <div class="certificate-select" @click="toggleDropdown" v-click-outside="closeDropdown">
+                    <div :class="['certificate-select__trigger', { 'is-open': isDropdownOpen, 'is-expired': selectedEKey && !isKeyValid(selectedEKey) }]">
+                      <div v-if="selectedEKey" class="certificate-select__selected">
+                        <div class="d-flex align-center justify-space-between flex-grow-1">
                           <div class="flex-grow-1">
                             <div class="d-flex align-center mb-1">
-                              <span class="font-weight-bold">{{ key.O || 'Организация' }}</span>
+                              <span class="font-weight-bold">{{ selectedEKey.O || 'Организация' }}</span>
                               <v-chip
-                                :color="getKeyStatus(key).color"
-                                size="small"
+                                :color="getKeyStatus(selectedEKey).color"
+                                size="x-small"
                                 class="ml-2"
                                 variant="flat"
                               >
-                                {{ getKeyStatus(key).text }}
+                                {{ t(getKeyStatus(selectedEKey).translationKey) }}
                               </v-chip>
                             </div>
-                            <div class="text-sm text-grey">
-                              <div>ИНН: {{ key.TIN }}</div>
-                              <div>Владелец: {{ key.CN }}</div>
-                              <div class="d-flex align-center">
-                                <span>Срок действия:</span>
-                                <span class="ml-1">{{ formatDate(key.validFrom) }} - {{ formatDate(key.validTo) }}</span>
-                              </div>
-                              <div v-if="key.diskAlias" class="text-caption">{{ key.diskAlias }}</div>
+                            <div class="text-caption text-grey">
+                              {{ t('user.inn') }}: {{ selectedEKey.TIN }} | {{ t('certificate_owner') }}: {{ selectedEKey.CN }}
                             </div>
                           </div>
+                          <v-icon>{{ isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
                         </div>
-                      </v-card-text>
-                    </v-card>
-                  </v-radio-group>
+                      </div>
+                      <div v-else class="certificate-select__placeholder">
+                        {{ t('select_certificate') }}
+                        <v-icon>{{ isDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                      </div>
+                    </div>
+
+                    <!-- Выпадающий список -->
+                    <transition name="dropdown">
+                      <div v-if="isDropdownOpen" class="certificate-select__dropdown">
+                        <div
+                          v-for="(key, index) in correctEKeys"
+                          :key="index"
+                          :class="['certificate-select__option', {
+                            'is-selected': selectedEKey === key,
+                            'is-expired': !isKeyValid(key)
+                          }]"
+                          @click.stop="selectKey(key)"
+                        >
+                          <div class="d-flex align-center mb-1">
+                            <span class="font-weight-bold">{{ key.O || 'Организация' }}</span>
+                            <v-chip
+                              :color="getKeyStatus(key).color"
+                              size="x-small"
+                              class="ml-2"
+                              variant="flat"
+                            >
+                              {{ t(getKeyStatus(key).translationKey) }}
+                            </v-chip>
+                          </div>
+                          <div class="text-caption">
+                            <div>{{ t('user.inn') }}: {{ key.TIN }}</div>
+                            <div>{{ t('certificate_owner') }}: {{ key.CN }}</div>
+                            <div>{{ t('valid_period') }}: {{ formatDate(key.validFrom) }} - {{ formatDate(key.validTo) }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </transition>
+                  </div>
                 </div>
 
+                <!-- Предупреждение о просроченном сертификате -->
+                <v-alert
+                  v-if="selectedEKey && !isKeyValid(selectedEKey)"
+                  type="error"
+                  variant="tonal"
+                  density="compact"
+                  class="mb-4"
+                >
+                  {{ t('certificate_expired_warning') }}
+                </v-alert>
+
                 <div class="d-flex justify-end">
-                  <base-button @click="signContract" :disabled="isSigningBlocked || !selectedEKey">
+                  <base-button
+                    @click="signContract"
+                    :disabled="isSigningBlocked || !selectedEKey || (selectedEKey && !isKeyValid(selectedEKey))"
+                  >
                     {{ t('contract.menu.sign') }}
                   </base-button>
                 </div>
@@ -221,6 +258,9 @@ const selectedUsbDevice = ref<string>('')
 // Показывать предупреждение о версии
 const showVersionWarning = ref(true)
 
+// Состояние dropdown для выбора сертификата
+const isDropdownOpen = ref(false)
+
 // Блокировать подписание пока показывается предупреждение о версии
 const isSigningBlocked = computed(() => {
   return versionInfo.value?.isOldVersion && showVersionWarning.value
@@ -266,20 +306,35 @@ const formatDate = (dateString: string): string => {
 }
 
 // Получение статуса ключа
-const getKeyStatus = (key: ESignKey): { text: string; color: string } => {
+const getKeyStatus = (key: ESignKey): { text: string; color: string; translationKey: string } => {
   if (!key.validTo) {
-    return { text: 'Неизвестно', color: 'grey' }
+    return { text: 'Неизвестно', color: 'grey', translationKey: 'certificate_unknown' }
   }
 
   const valid = isKeyValid(key)
   return valid
-    ? { text: 'Действителен', color: 'success' }
-    : { text: 'Просрочен', color: 'error' }
+    ? { text: 'Действителен', color: 'success', translationKey: 'certificate_valid' }
+    : { text: 'Просрочен', color: 'error', translationKey: 'certificate_expired' }
+}
+
+// Управление dropdown
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value
+}
+
+const closeDropdown = () => {
+  isDropdownOpen.value = false
+}
+
+const selectKey = (key: ESignKey) => {
+  selectedEKey.value = key
+  closeDropdown()
 }
 
 const openModal = async (contractId: number) => {
   // Сбрасываем ошибки при открытии
   clearError()
+  isDropdownOpen.value = false
   await fetchContractSign(contractId)
   isModalOpen.value = true
 }
@@ -454,30 +509,110 @@ defineExpose({
   }
 }
 
-// Стили для элементов списка сертификатов
-.key-item {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
+// Кастомный select для сертификатов в стиле OneID
+.certificate-select {
+  position: relative;
 
-  &:hover {
-    border-color: rgba(var(--v-theme-primary), 0.3);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &-selected {
-    border-color: rgb(var(--v-theme-primary));
-    background-color: rgba(var(--v-theme-primary), 0.05);
-  }
-
-  &-expired {
-    opacity: 0.7;
-    background-color: rgba(var(--v-theme-error), 0.03);
+  &__trigger {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s ease;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
 
     &:hover {
-      border-color: rgba(var(--v-theme-error), 0.3);
+      border-color: rgb(var(--v-theme-primary));
+    }
+
+    &.is-open {
+      border-color: rgb(var(--v-theme-primary));
+      box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
+    }
+
+    &.is-expired {
+      border-color: rgb(var(--v-theme-error));
+      background-color: rgba(var(--v-theme-error), 0.02);
     }
   }
+
+  &__selected {
+    width: 100%;
+  }
+
+  &__placeholder {
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  &__dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  &__option {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: rgba(var(--v-theme-primary), 0.05);
+    }
+
+    &.is-selected {
+      background-color: rgba(var(--v-theme-primary), 0.1);
+      border-left: 3px solid rgb(var(--v-theme-primary));
+    }
+
+    &.is-expired {
+      color: rgb(var(--v-theme-error));
+      background-color: rgba(var(--v-theme-error), 0.02);
+
+      .font-weight-bold {
+        color: rgb(var(--v-theme-error));
+      }
+
+      &:hover {
+        background-color: rgba(var(--v-theme-error), 0.05);
+      }
+    }
+  }
+}
+
+// Анимация для dropdown
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dropdown-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 // Убираем transition/анимацию для табов

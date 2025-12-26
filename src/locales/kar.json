@@ -788,5 +788,13 @@
   "old_eimzo_version": "Sizde E-IMZO nıń eski versiyası ornatılǵan",
   "old_eimzo_version_desc": "Turaqtı jumıs ushın E-IMZO nı 5 yamasa onnan joqarı versiyaǵa jańalaw kerek",
   "download_eimzo": "Jańa versiyasın júklep alıw",
-  "continue_anyway": "Házirgi versiya menen dawam etiw"
+  "continue_anyway": "Házirgi versiya menen dawam etiw",
+  "select_certificate": "Sertifikatni tańlań",
+  "certificate_valid": "Ámelge asadı",
+  "certificate_expired": "Waqtı ótti",
+  "certificate_unknown": "Belgisiz",
+  "valid_period": "Ámel etu waqtı",
+  "certificate_owner": "Iyesi",
+  "certificate_expired_warning": "Tańlanǵan sertifikatnıń waqtı ótti. Qol qoyıw múmkin emes.",
+  "no_valid_certificates": "Bul uyım ushın ámelge asatın sertifikatlar joq"
 }
